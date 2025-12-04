@@ -94,11 +94,17 @@ def draw_graph_instance(G, S1, S2, weights=None):
 
 
 
-def draw_graph_with_solution(V, E, costs, S1, S2, selected_edges=None):
+def draw_solution(H, S1, S2, costs, selected_edges=None):
     """
-    Draw the instance graph together with the solution (thick red trasparent edges)
+    Draw the NetworkX graph H with circular layout for S1 and S2.
+    Edges are colored based on the provided costs list.
+    
+    Inputs:
+        H : networkx.Graph
+        S1, S2 : lists of nodes
+        costs : list of edge weights in the same order as list(H.edges())
+        selected_edges : list of edges to highlight in red (optional)
     """
-
     # ----- Circular configuration for the vertices -----
     def circle_positions(nodes, radius):
         k = len(nodes)
@@ -131,27 +137,29 @@ def draw_graph_with_solution(V, E, costs, S1, S2, selected_edges=None):
     for n, (x, y) in positions.items():
         plt.text(x, y, str(n), ha="center", va="center", fontsize=12)
 
-    # ----- Draw the instance graph edges -----
-    for (e, cost) in zip(E, costs):
+    # ----- Draw the edges based on costs -----
+    edge_list = list(H.edges())
+    for (e, cost) in zip(edge_list, costs):
         u, v = e
         x1, y1 = positions[u]
         x2, y2 = positions[v]
         plt.plot([x1, x2], [y1, y2],
                  color=cmap(normalize(cost)),
-                 alpha=0.3,          
-                 linewidth=1.5)      
+                 alpha=0.35,
+                 linewidth=1.8)
 
-    # ----- Draw the thick red edges to highlight the optimal solution -----
-    first_label = True
-    for (u, v) in selected_edges:
-        x1, y1 = positions[u]
-        x2, y2 = positions[v]
-        plt.plot([x1, x2], [y1, y2],
-                color="red",
-                linewidth=6,        
-                alpha=0.6,          
-                label="Optimal UBT" if first_label else "")
-        first_label = False
+    # ----- Draw selected edges in red -----
+    if selected_edges is not None:
+        first_label = True
+        for (u, v) in selected_edges:
+            x1, y1 = positions[u]
+            x2, y2 = positions[v]
+            plt.plot([x1, x2], [y1, y2],
+                     color="red",
+                     linewidth=6,
+                     alpha=0.6,
+                     label="Optimal UBT" if first_label else "")
+            first_label = False
 
     plt.title("Solution to the problem", fontsize=14)
     plt.axis("equal")

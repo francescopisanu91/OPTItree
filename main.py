@@ -1,13 +1,23 @@
 import graphical_tool
 import instance_generator
+import additive_instance_generator
 import instance_converter
 import minimum_weighted_UBT_finder
 import graph_generator
 import numpy as np 
 
 # 1. Generate a random matrix D
-D = instance_generator.generate_symmetric_nonneg_matrix(5)
-print(D)
+
+T, _, weights = additive_instance_generator.random_tree_with_n_leaves(18)
+T, weights = additive_instance_generator.tree_cubifier(T, weights)
+T, leaves, weights = additive_instance_generator.relabel_tree_leaves_first(T, weights)
+D = additive_instance_generator.additive_matrix(T,leaves,weights)
+graphical_tool.draw_tree_with_weights(T, weights, title="Starting UBT")
+D = instance_generator.perturb_additive_matrix(D, weights)
+
+# # # 1. ALTERNATIVE: Generate a random matrix D
+# # D = instance_generator.generate_symmetric_nonneg_matrix(5)
+# # print(D)
 
 # 2. Generate and draw the weighted complete graph associated with D
 G, S1, S2, weigths = graph_generator.build_complete_graph_from_D(D)
@@ -38,3 +48,6 @@ graphical_tool.draw_graph_instance(G, S1, S2, predicted_weights_dict )
 
 # 8. Solve exact instance
 minimum_weighted_UBT_finder.ubt_solver_from_star_graph(H, S1, S2, predicted_weights_list)
+
+
+

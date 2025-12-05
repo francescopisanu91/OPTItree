@@ -2,7 +2,7 @@ from random import uniform
 import numpy as np
 
 
-def generate_symmetric_nonneg_matrix(n,
+def generate_random_symmetric_nonneg_matrix(n,
                                      low=0.0,
                                      high=1.0,
                                      integer=False,
@@ -51,41 +51,45 @@ def generate_symmetric_nonneg_matrix(n,
 
     return D.astype(dtype)
 
-
-def weighted_graph_generator(n, low=1.0, high=10.0):
+def perturb_additive_matrix(D, weights):
     """
-    Generate a graph such that:
-    - S1 = {1, ..., n}
-    - S2 = {n+1, ..., 2n-2}
-    - every i in S1 is universal towards S2
-    - S2 is a clique
-    - all the edges are weighted uniformly randomly in [low, high]
+    Add symmetric random noise to a leaf distance matrix D.
 
-    Ritorna:
-    - V: vertex set S1US2
-    - E: edge list (u, v)
-    - costs: wieght list sorted with respect to E
+    Parameters:
+        D       : numpy array (N x N), symmetric
+        weights : list or dict of edge weights
+
+    Returns:
+        D_new   : new perturbed symmetric numpy array
     """
-    # Vertex sets definition
-    S1 = list(range(1, n+1))
-    S2 = list(range(n+1, 2*n-1))   # n-2 vertex
 
-    V = S1 + S2
-    E = []
+    # Convert to array
+    D = np.asarray(D, dtype=float)
+    N = D.shape[0]
 
-    # Edges from S1 towards S2
-    for u in S1:
-        for v in S2:
-            E.append((u, v))
+    # Extract min weight
+    if isinstance(weights, dict):
+        w_min = min(weights.values())
+    else:
+        w_min = min(weights)
 
-    # S2 clique (symmetries are broken)
-    for i in range(len(S2)):
-        for j in range(i+1, len(S2)):
-            E.append((S2[i], S2[j]))
+    epsilon = w_min / 2.1
 
-    # Random weights generator
-    costs = [round(uniform(low, high), 2) for _ in E]
+    # Create copy
+    D_new = D.copy()
 
-    return V, E, costs
+    # Apply noise symmetrically
+    for i in range(N):
+        for j in range(i + 1, N):
+            noise = uniform(-epsilon, epsilon)
+            Dij = D_new[i, j] + noise
+            D_new[i, j] = Dij
+            D_new[j, i] = Dij
+
+    return D_new
+
+
+
+
 
 

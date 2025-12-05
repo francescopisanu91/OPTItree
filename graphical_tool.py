@@ -166,3 +166,65 @@ def draw_solution(H, S1, S2, costs, selected_edges=None):
     plt.axis("off")
     plt.legend()
     plt.show()
+
+
+
+def draw_tree_with_weights(T, weights, title="Tree with weights"):
+    """
+    Draws the tree T with edge weights in a clear and readable way.
+
+    - Edges with weight = 0 are drawn in gray.
+    - Positive weights use a viridis heatmap scale.
+    - Shows edge labels.
+    """
+
+    plt.figure(figsize=(10, 7))
+
+    # Layout: spring is intuitive for arbitrary trees
+    pos = nx.spring_layout(T, seed=42)
+
+    # Extract weights in order of T.edges()
+    edge_list = []
+    edge_colors = []
+    edge_widths = []
+
+    cmap = sns.color_palette("viridis", as_cmap=True)
+
+    # Collect positive weights for normalization
+    pos_weights = [w for w in weights.values() if w > 0]
+    if len(pos_weights) > 0:
+        wmin, wmax = min(pos_weights), max(pos_weights)
+        normalize = lambda w: (w - wmin) / (wmax - wmin + 1e-9)
+    else:
+        normalize = lambda w: 0.5
+
+    for (u, v) in T.edges():
+        key = tuple(sorted((u, v)))
+        w = weights.get(key, 0.0)
+
+        edge_list.append((u, v))
+
+        if w == 0:
+            edge_colors.append("gray")
+            edge_widths.append(1.2)
+        else:
+            edge_colors.append(cmap(normalize(w)))
+            edge_widths.append(2.5)
+
+    # Draw nodes
+    nx.draw_networkx_nodes(T, pos, node_size=600, node_color="white", edgecolors="black")
+
+    # Draw edges with correct colors
+    nx.draw_networkx_edges(T, pos, edgelist=edge_list,
+                           edge_color=edge_colors, width=edge_widths, alpha=0.9)
+
+    # Node labels
+    nx.draw_networkx_labels(T, pos, font_size=10)
+
+    # Edge labels
+    edge_labels = {edge: f"{weights.get(tuple(sorted(edge)), 0):.2f}" for edge in T.edges()}
+    nx.draw_networkx_edge_labels(T, pos, edge_labels=edge_labels, font_color="black")
+
+    plt.title(title)
+    plt.axis("off")
+    plt.show()

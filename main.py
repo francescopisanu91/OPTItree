@@ -10,10 +10,9 @@ import numpy as np
 
 T, _, weights = additive_instance_generator.random_tree_with_n_leaves(18)
 T, weights = additive_instance_generator.tree_cubifier(T, weights)
-T, leaves, weights = additive_instance_generator.relabel_tree_leaves_first(T, weights)
-D = additive_instance_generator.additive_matrix(T,leaves,weights)
-graphical_tool.draw_tree_with_weights(T, weights, title="Starting UBT")
-D = instance_generator.perturb_additive_matrix(D, weights)
+T, leaves, tree_weights = additive_instance_generator.relabel_tree_leaves_first(T, weights)
+D = additive_instance_generator.additive_matrix(T,leaves,tree_weights)
+D = instance_generator.perturb_additive_matrix(D, tree_weights)
 
 # # # 1. ALTERNATIVE: Generate a random matrix D
 # # D = instance_generator.generate_symmetric_nonneg_matrix(5)
@@ -21,13 +20,14 @@ D = instance_generator.perturb_additive_matrix(D, weights)
 
 # 2. Generate and draw the weighted complete graph associated with D
 G, S1, S2, weigths = graph_generator.build_complete_graph_from_D(D)
+graphical_tool.draw_graph_instance(T,S1, S2, tree_weights, title='Starting UBT')
 print(G)
-graphical_tool.draw_graph_instance(G, S1, S2, weigths )
+graphical_tool.draw_graph_instance(G, S1, S2, weigths, title='The complete graph G')
 
 # 3. Generate and draw the unweighted star graph H on which the UBT lies
 H, S1, S2 = graph_generator.build_star_graph_from_D(D)
 print(G)
-graphical_tool.draw_graph_instance(H, S1, S2 )
+graphical_tool.draw_graph_instance(H, S1, S2, title='the star graph H')
 
 # 4. Generate the line graph of G
 LG, edge_list, edge_to_idx = instance_converter.line_graph(G)
@@ -44,7 +44,7 @@ print("LG nodes:", LG_nodes)
 print("All weights:", LG_weights)
 print("Filtered weights:", predicted_weights_dict)
 
-graphical_tool.draw_graph_instance(G, S1, S2, predicted_weights_dict ) 
+graphical_tool.draw_graph_instance(H, S1, S2, predicted_weights_dict, 'The prediceted weighted star graph H' ) 
 
 # 8. Solve exact instance
 minimum_weighted_UBT_finder.ubt_solver_from_star_graph(H, S1, S2, predicted_weights_list)

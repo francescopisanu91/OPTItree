@@ -5,7 +5,7 @@ import networkx as nx
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 
-def draw_graph_instance(G, S1, S2, weights=None):
+def draw_graph_instance(G, S1, S2, weights=None, title = ''):
     """
     Draw graph G with S1 and S2 placed on two circles.
 
@@ -85,7 +85,7 @@ def draw_graph_instance(G, S1, S2, weights=None):
                      color=cmap(normalize(w)),
                      alpha=0.7, linewidth=2.0)
 
-    plt.title("Graph instance (weight=0 → gray, weight>0 → heatmap)", fontsize=14)
+    plt.title(title, fontsize=14)
     plt.axis("equal")
     plt.axis("off")
     plt.legend()

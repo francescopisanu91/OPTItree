@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Attività A — La datazione</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --terra: #6b4a2f;
+    --terra-scuro: #4a3220;
+    --osso: #f2e9d8;
+    --osso-scuro: #e3d5b8;
+    --ocra: #c17f2e;
+    --muschio: #4f6b45;
+    --errore: #a34a3a;
+    --ombra: rgba(74, 50, 32, 0.25);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--osso);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: var(--terra-scuro);
+    overscroll-behavior: none;
+  }
+  .schermo {
+    min-height: 100vh;
+    display: none;
+    flex-direction: column;
+    padding: 1.2rem 1rem 2rem;
+  }
+  .schermo.attiva { display: flex; }
+
+  header.intestazione {
+    text-align: center;
+    margin-bottom: 0.8rem;
+  }
+  header.intestazione .etichetta {
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ocra);
+    margin: 0 0 0.2rem;
+  }
+  header.intestazione h1 {
+    font-size: 1.4rem;
+    margin: 0;
+    line-height: 1.25;
+  }
+  p.istruzioni {
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 32rem;
+    margin: 0.6rem auto 1.2rem;
+    color: var(--terra-scuro);
+  }
+
+  /* schermata iniziale */
+  .centro {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1.4rem;
+  }
+  .centro h1 { font-size: 1.7rem; margin: 0; }
+  .centro p { max-width: 26rem; line-height: 1.6; margin: 0; }
+
+  button.bottone {
+    font-family: inherit;
+    font-size: 1.05rem;
+    padding: 0.85rem 1.8rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--terra);
+    color: var(--osso);
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--terra-scuro);
+    transition: transform 0.08s ease;
+  }
+  button.bottone:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--terra-scuro); }
+  button.bottone.secondario {
+    background: transparent;
+    color: var(--terra);
+    box-shadow: none;
+    border: 2px solid var(--terra);
+    padding: 0.7rem 1.6rem;
+  }
+
+  /* freccia guida ordine */
+  .guida-ordine {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--terra);
+    margin-bottom: 1rem;
+    opacity: 0.85;
+  }
+
+  /* lista fossili trascinabili */
+  ul.lista-fossili {
+    list-style: none;
+    margin: 0 auto;
+    padding: 0;
+    width: 100%;
+    max-width: 26rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    flex: 1;
+  }
+  li.fossile {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: var(--osso-scuro);
+    border: 2px solid var(--terra);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    cursor: grab;
+    touch-action: none;
+    position: relative;
+    user-select: none;
+  }
+  li.fossile.trascinato {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+  li.fossile.sopra-target {
+    border-style: dashed;
+    border-color: var(--ocra);
+  }
+  .fossile .maniglia {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    color: var(--terra);
+    opacity: 0.6;
+    line-height: 1;
+  }
+  .fossile .icona {
+    font-size: 1.6rem;
+    width: 2.2rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .fossile .info { flex: 1; min-width: 0; }
+  .fossile .nome {
+    font-weight: bold;
+    font-size: 1rem;
+    margin: 0 0 0.15rem;
+  }
+  .fossile .dettaglio {
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    color: var(--terra);
+    margin: 0;
+  }
+  .fossile .posizione {
+    font-family: 'Courier New', monospace;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--ocra);
+    width: 1.6rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* stato dopo verifica */
+  li.fossile.corretta { border-color: var(--muschio); }
+  li.fossile.sbagliata { border-color: var(--errore); }
+  li.fossile .segno {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    width: 1.4rem;
+    text-align: center;
+  }
+
+  .barra-azioni {
+    display: flex;
+    justify-content: center;
+    gap: 0.8rem;
+    margin-top: 1.2rem;
+  }
+
+  .messaggio-esito {
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.5;
+    max-width: 28rem;
+    margin: 1rem auto 0;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    display: none;
+  }
+  .messaggio-esito.mostra { display: block; }
+  .messaggio-esito.esito-ok {
+    background: #e4ead9;
+    border: 2px solid var(--muschio);
+    color: #33452c;
+  }
+  .messaggio-esito.esito-no {
+    background: #f1ded9;
+    border: 2px solid var(--errore);
+    color: #6b2e22;
+  }
+
+  footer.piede {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    color: var(--terra);
+    opacity: 0.6;
+    margin-top: 1.5rem;
+  }
+
+  @media (min-width: 600px) {
+    .schermo { padding: 2rem 1rem 3rem; }
+    header.intestazione h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SCHERMATA 0: introduzione -->
+<div class="schermo attiva" id="schermo-intro">
+  <div class="centro">
+    <p class="etichetta" style="font-family:'Courier New',monospace;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--ocra);margin:0;">Attività A</p>
+    <h1>La datazione</h1>
+    <p>Ogni fossile porta con sé un orologio chimico nascosto. Misurandolo, sappiamo da quanto tempo quell'animale è vissuto.</p>
+    <p>Trascina i fossili per metterli in ordine, dal <strong>più antico</strong> al <strong>più recente</strong>.</p>
+    <button class="bottone" id="btn-inizia">Inizia — livello 1</button>
+  </div>
+</div>
+
+<!-- SCHERMATA 1: livello facile -->
+<div class="schermo" id="schermo-livello1">
+  <header class="intestazione">
+    <p class="etichetta">Livello 1 — base</p>
+    <h1>Ordina i fossili</h1>
+  </header>
+  <p class="istruzioni">Trascina per riordinare: in cima il più antico, in fondo il più recente.</p>
+  <div class="guida-ordine">
+    <span>PIÙ ANTICO</span><span>↑ ... ↓</span><span>PIÙ RECENTE</span>
+  </div>
+  <ul class="lista-fossili" id="lista-1"></ul>
+  <div class="barra-azioni">
+    <button class="bottone" id="btn-verifica-1">Verifica ordine</button>
+  </div>
+  <div class="messaggio-esito" id="esito-1"></div>
+</div>
+
+<!-- SCHERMATA 2: livello avanzato -->
+<div class="schermo" id="schermo-livello2">
+  <header class="intestazione">
+    <p class="etichetta">Livello 2 — avanzato</p>
+    <h1>Ordina i fossili</h1>
+  </header>
+  <p class="istruzioni">Qui le età sono più ravvicinate: serve più attenzione.</p>
+  <div class="guida-ordine">
+    <span>PIÙ ANTICO</span><span>↑ ... ↓</span><span>PIÙ RECENTE</span>
+  </div>
+  <ul class="lista-fossili" id="lista-2"></ul>
+  <div class="barra-azioni">
+    <button class="bottone" id="btn-verifica-2">Verifica ordine</button>
+  </div>
+  <div class="messaggio-esito" id="esito-2"></div>
+</div>
+
+<!-- SCHERMATA 3: fine -->
+<div class="schermo" id="schermo-fine">
+  <div class="centro">
+    <h1>Attività completata</h1>
+    <p>Avete visto come i fossili portano con sé un orologio chimico che permette di ordinarli nel tempo.</p>
+    <div style="display:flex; gap:0.8rem; flex-wrap:wrap; justify-content:center;">
+      <button class="bottone secondario" id="btn-ricomincia">Ricomincia</button>
+      <button class="bottone" id="btn-vai-livello3">Vai al livello 3 →</button>
+    </div>
+  </div>
+</div>
+
+<footer class="piede">La matematica dell'evoluzione — Notte dei Ricercatori 2026</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // --- dati fossili: ordine di inserimento = ordine cronologico corretto (più antico -> più recente) ---
+  var fossiliLivello1 = [
+    { id: "a1", nome: "Trilobite", icona: "🐚", eta: "≈ 500 milioni di anni" },
+    { id: "a2", nome: "Ittiosauro", icona: "🦴", eta: "≈ 200 milioni di anni" },
+    { id: "a3", nome: "Tirannosauro", icona: "🦖", eta: "≈ 68 milioni di anni" },
+    { id: "a4", nome: "Mammut", icona: "🦣", eta: "≈ 20 mila anni" }
+  ];
+
+  var fossiliLivello2 = [
+    { id: "b1", nome: "Ammonite antica", icona: "🐚", eta: "≈ 180 milioni di anni" },
+    { id: "b2", nome: "Ammonite recente", icona: "🐚", eta: "≈ 150 milioni di anni" },
+    { id: "b3", nome: "Velociraptor", icona: "🦖", eta: "≈ 75 milioni di anni" },
+    { id: "b4", nome: "Triceratopo", icona: "🦖", eta: "≈ 68 milioni di anni" },
+    { id: "b5", nome: "Smilodonte", icona: "🐾", eta: "≈ 12 mila anni" }
+  ];
+
+  function mescola(array) {
+    var copia = array.slice();
+    for (var i = copia.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = copia[i]; copia[i] = copia[j]; copia[j] = tmp;
+    }
+    return copia;
+  }
+
+  function mostraSchermo(id) {
+    document.querySelectorAll(".schermo").forEach(function (s) { s.classList.remove("attiva"); });
+    document.getElementById(id).classList.add("attiva");
+    window.scrollTo(0, 0);
+  }
+
+  // --- costruzione lista trascinabile ---
+  function costruisciLista(container, datiOrdineCorretto) {
+    var elementi = mescola(datiOrdineCorretto);
+    container.innerHTML = "";
+    elementi.forEach(function (f) {
+      var li = document.createElement("li");
+      li.className = "fossile";
+      li.setAttribute("draggable", "true");
+      li.dataset.id = f.id;
+      li.innerHTML =
+        '<span class="maniglia">⠿</span>' +
+        '<span class="icona">' + f.icona + '</span>' +
+        '<span class="info"><p class="nome">' + f.nome + '</p><p class="dettaglio">' + f.eta + '</p></span>' +
+        '<span class="segno"></span>';
+      container.appendChild(li);
+    });
+    abilitaTrascinamento(container);
+  }
+
+  // --- drag and drop: mouse (desktop) + touch (telefono) ---
+  function abilitaTrascinamento(container) {
+    var elementoTrascinato = null;
+
+    container.querySelectorAll("li.fossile").forEach(function (li) {
+      // Desktop drag events
+      li.addEventListener("dragstart", function () {
+        elementoTrascinato = li;
+        li.classList.add("trascinato");
+      });
+      li.addEventListener("dragend", function () {
+        li.classList.remove("trascinato");
+        elementoTrascinato = null;
+        container.querySelectorAll("li.fossile").forEach(function (x) { x.classList.remove("sopra-target"); });
+      });
+      li.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        li.classList.add("sopra-target");
+      });
+      li.addEventListener("dragleave", function () {
+        li.classList.remove("sopra-target");
+      });
+      li.addEventListener("drop", function (e) {
+        e.preventDefault();
+        li.classList.remove("sopra-target");
+        if (elementoTrascinato && elementoTrascinato !== li) {
+          scambiaElementi(container, elementoTrascinato, li);
+        }
+      });
+
+      // Touch events (telefono)
+      var offsetY = 0;
+      var attivo = false;
+
+      li.addEventListener("touchstart", function (e) {
+        attivo = true;
+        elementoTrascinato = li;
+        li.classList.add("trascinato");
+        offsetY = e.touches[0].clientY;
+      }, { passive: true });
+
+      li.addEventListener("touchmove", function (e) {
+        if (!attivo) return;
+        var toccoY = e.touches[0].clientY;
+        var sotto = document.elementFromPoint(e.touches[0].clientX, toccoY);
+        var liSotto = sotto ? sotto.closest("li.fossile") : null;
+        container.querySelectorAll("li.fossile").forEach(function (x) { x.classList.remove("sopra-target"); });
+        if (liSotto && liSotto !== li) {
+          liSotto.classList.add("sopra-target");
+        }
+      }, { passive: true });
+
+      li.addEventListener("touchend", function (e) {
+        if (!attivo) return;
+        attivo = false;
+        li.classList.remove("trascinato");
+        var ultimoTocco = e.changedTouches[0];
+        var sotto = document.elementFromPoint(ultimoTocco.clientX, ultimoTocco.clientY);
+        var liSotto = sotto ? sotto.closest("li.fossile") : null;
+        container.querySelectorAll("li.fossile").forEach(function (x) { x.classList.remove("sopra-target"); });
+        if (liSotto && liSotto !== li) {
+          scambiaElementi(container, li, liSotto);
+        }
+        elementoTrascinato = null;
+      });
+    });
+  }
+
+  function scambiaElementi(container, elA, elB) {
+    var tuttiGliElementi = Array.prototype.slice.call(container.children);
+    var indiceA = tuttiGliElementi.indexOf(elA);
+    var indiceB = tuttiGliElementi.indexOf(elB);
+    if (indiceA < indiceB) {
+      container.insertBefore(elA, elB.nextSibling);
+    } else {
+      container.insertBefore(elA, elB);
+    }
+  }
+
+  // --- verifica ordine, mostra esito senza punteggio ---
+  function verificaOrdine(container, datiOrdineCorretto, elementoEsito, alCompletamento) {
+    var idCorretti = datiOrdineCorretto.map(function (f) { return f.id; });
+    var idAttuali = Array.prototype.slice.call(container.children).map(function (li) { return li.dataset.id; });
+
+    var tuttoCorretto = true;
+    Array.prototype.slice.call(container.children).forEach(function (li, indice) {
+      li.classList.remove("corretta", "sbagliata");
+      var segno = li.querySelector(".segno");
+      if (li.dataset.id === idCorretti[indice]) {
+        li.classList.add("corretta");
+        segno.textContent = "✓";
+      } else {
+        li.classList.add("sbagliata");
+        segno.textContent = "✗";
+        tuttoCorretto = false;
+      }
+    });
+
+    elementoEsito.classList.remove("esito-ok", "esito-no");
+    elementoEsito.classList.add("mostra");
+    if (tuttoCorretto) {
+      elementoEsito.classList.add("esito-ok");
+      elementoEsito.innerHTML = "<strong>Ordine corretto!</strong><br>" + (alCompletamento || "");
+    } else {
+      elementoEsito.classList.add("esito-no");
+      elementoEsito.innerHTML = "<strong>Non ancora corretto.</strong><br>Guarda i segni ✓ e ✗ su ogni fossile, sistema quelli sbagliati e riprova.";
+    }
+    return tuttoCorretto;
+  }
+
+  // --- avvio ---
+  document.getElementById("btn-inizia").addEventListener("click", function () {
+    costruisciLista(document.getElementById("lista-1"), fossiliLivello1);
+    mostraSchermo("schermo-livello1");
+  });
+
+  document.getElementById("btn-verifica-1").addEventListener("click", function () {
+    var ok = verificaOrdine(
+      document.getElementById("lista-1"),
+      fossiliLivello1,
+      document.getElementById("esito-1"),
+      "Passiamo al livello 2, un po' più difficile."
+    );
+    if (ok) {
+      document.getElementById("btn-verifica-1").textContent = "Vai al livello 2 →";
+      document.getElementById("btn-verifica-1").onclick = function () {
+        costruisciLista(document.getElementById("lista-2"), fossiliLivello2);
+        mostraSchermo("schermo-livello2");
+      };
+    }
+  });
+
+  document.getElementById("btn-verifica-2").addEventListener("click", function () {
+    var ok = verificaOrdine(
+      document.getElementById("lista-2"),
+      fossiliLivello2,
+      document.getElementById("esito-2"),
+      "Bel lavoro da paleontologi!"
+    );
+    if (ok) {
+      document.getElementById("btn-verifica-2").textContent = "Fine attività →";
+      document.getElementById("btn-verifica-2").onclick = function () {
+        mostraSchermo("schermo-fine");
+      };
+    }
+  });
+
+  document.getElementById("btn-ricomincia").addEventListener("click", function () {
+    document.getElementById("btn-verifica-1").textContent = "Verifica ordine";
+    document.getElementById("esito-1").classList.remove("mostra");
+    document.getElementById("btn-verifica-2").textContent = "Verifica ordine";
+    document.getElementById("esito-2").classList.remove("mostra");
+    mostraSchermo("schermo-intro");
+  });
+
+  document.getElementById("btn-vai-livello3").addEventListener("click", function () {
+    window.location.href = "livello3.html";
+  });
+
+  // --- registrazione service worker per uso offline ---
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function (err) {
+        console.warn("Service worker non registrato:", err);
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>

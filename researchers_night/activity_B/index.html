@@ -374,14 +374,16 @@
 
   function attivaQuizAssociativo(config) {
     var selezione = new Set();
-    var verificato = false;
     var carte = document.querySelectorAll(config.selettoreCarte);
     var btnVerifica = document.getElementById(config.idBottone);
     var esito = document.getElementById(config.idEsito);
 
+    function aggiornaStatoBottone() {
+      btnVerifica.disabled = selezione.size !== config.numeroDaSelezionare;
+    }
+
     carte.forEach(function (carta) {
       carta.addEventListener("click", function () {
-        if (verificato) return;
         var id = carta.dataset.id;
         if (selezione.has(id)) {
           selezione.delete(id);
@@ -391,47 +393,45 @@
           selezione.add(id);
           carta.classList.add("selezionata");
         }
-        btnVerifica.disabled = selezione.size !== config.numeroDaSelezionare;
+        aggiornaStatoBottone();
       });
     });
 
     btnVerifica.addEventListener("click", function () {
-      verificato = true;
       var tutteCorrette = true;
 
       carte.forEach(function (carta) {
         var id = carta.dataset.id;
         var eCorretta = carta.dataset.corretta === "true";
         var selezionata = selezione.has(id);
-        var testoEsito = carta.querySelector(".esito-testo");
-
-        carta.classList.remove("selezionata");
-
-        if (selezionata && eCorretta) {
-          carta.classList.add("corretta");
-          testoEsito.textContent = "✓ " + carta.dataset.spiegazioneCorretta;
-        } else if (selezionata && !eCorretta) {
-          carta.classList.add("sbagliata");
-          testoEsito.textContent = "✗ " + carta.dataset.spiegazioneTrappola;
-          tutteCorrette = false;
-        } else if (!selezionata && eCorretta) {
-          carta.classList.add("sbagliata");
-          testoEsito.textContent = "✗ ti è sfuggito: " + carta.dataset.spiegazioneCorretta;
-          tutteCorrette = false;
-        }
+        if (selezionata !== eCorretta) tutteCorrette = false;
       });
 
       esito.classList.remove("esito-ok", "esito-no");
       esito.classList.add("mostra");
+
       if (tutteCorrette) {
+        // risposta esatta: ora sì, mostra il dettaglio corretto/sbagliato su ogni carta come conferma
+        carte.forEach(function (carta) {
+          var id = carta.dataset.id;
+          var eCorretta = carta.dataset.corretta === "true";
+          var selezionata = selezione.has(id);
+          var testoEsito = carta.querySelector(".esito-testo");
+          carta.classList.remove("selezionata");
+          if (selezionata && eCorretta) {
+            carta.classList.add("corretta");
+            testoEsito.textContent = "✓ " + carta.dataset.spiegazioneCorretta;
+          }
+        });
         esito.classList.add("esito-ok");
         esito.innerHTML = config.messaggioCorretto;
+        btnVerifica.disabled = true;
+        carte.forEach(function (carta) { carta.style.pointerEvents = "none"; });
       } else {
+        // risposta sbagliata: nessun indizio su quali carte fossero giuste, si può solo riprovare
         esito.classList.add("esito-no");
         esito.innerHTML = config.messaggioSbagliato;
       }
-
-      btnVerifica.disabled = true;
     });
   }
 
@@ -441,7 +441,7 @@
     idEsito: "esito-quiz-1",
     numeroDaSelezionare: 2,
     messaggioCorretto: "<strong>Esatto!</strong><br>Koala e opossum sono marsupiali, anche se vivono su continenti diversi. Platipo e dingo vivono in Australia come il canguro, ma non sono suoi parenti stretti.<br><br><button class=\"bottone\" id=\"btn-continua-livello2\">Continua →</button>",
-    messaggioSbagliato: "<strong>Non proprio.</strong><br>Guarda i segni ✓ e ✗ su ogni carta. Vivere nello stesso posto non basta per essere parenti: conta il tipo di animale, non il continente."
+    messaggioSbagliato: "<strong>Non ancora.</strong><br>Cambia selezione e riprova: non basta vivere nello stesso posto, conta il tipo di animale."
   });
 
   attivaQuizAssociativo({
@@ -450,7 +450,7 @@
     idEsito: "esito-quiz-2",
     numeroDaSelezionare: 3,
     messaggioCorretto: "<strong>Esatto!</strong><br>Rea, emù e kiwi sono parenti stretti dello struzzo: fanno tutti parte del gruppo dei ratiti. Otarda, pinguino, fenicottero e kakapo non volano o vivono negli stessi luoghi, ma appartengono a famiglie completamente diverse.",
-    messaggioSbagliato: "<strong>Non proprio.</strong><br>Guarda i segni ✓ e ✗ su ogni carta. Non basta essere grandi, non volare, o vivere vicino: conta la vera parentela."
+    messaggioSbagliato: "<strong>Non ancora.</strong><br>Cambia selezione e riprova: non basta essere grandi, non volare, o vivere vicino."
   });
 
   function mostraSchermo(id) {

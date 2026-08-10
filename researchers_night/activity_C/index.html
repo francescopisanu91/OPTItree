@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Attività C — Le caratteristiche morfologiche</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --terra: #6b4a2f;
+    --terra-scuro: #4a3220;
+    --osso: #f2e9d8;
+    --osso-scuro: #e3d5b8;
+    --ocra: #c17f2e;
+    --muschio: #4f6b45;
+    --errore: #a34a3a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--osso);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: var(--terra-scuro);
+  }
+
+  .schermo { display: none; }
+  .schermo.attiva { display: block; }
+
+  header.intro {
+    text-align: center;
+    padding: 1.5rem 1rem 1rem;
+  }
+  header.intro .etichetta {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ocra);
+    margin: 0 0 0.3rem;
+  }
+  header.intro h1 { font-size: 1.5rem; margin: 0 0 0.6rem; }
+  header.intro p { max-width: 32rem; margin: 0 auto; line-height: 1.55; font-size: 0.95rem; }
+
+  .progresso-livelli {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--terra);
+    padding: 0.6rem 0 1.2rem;
+    letter-spacing: 0.05em;
+  }
+
+  section.sezione-gioco {
+    padding: 0 1rem 3rem;
+    max-width: 40rem;
+    margin: 0 auto;
+  }
+  section.sezione-gioco h2 {
+    text-align: center;
+    font-size: 1.3rem;
+    margin: 0 0 0.4rem;
+  }
+  section.sezione-gioco > p.istruzioni {
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 1.5rem;
+  }
+
+  .riferimento {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.6rem;
+  }
+  .riferimento .figura {
+    display: block;
+    width: 160px;
+    height: 160px;
+    background: var(--osso-scuro);
+    border: 3px solid var(--terra);
+    border-radius: 12px;
+    object-fit: contain;
+    object-position: center;
+  }
+  .riferimento .nome-rif {
+    font-weight: bold;
+    font-size: 1.15rem;
+  }
+  .riferimento .dieta-rif {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--ocra);
+  }
+
+  .domanda-fissa {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0 0 1.2rem;
+    color: var(--terra-scuro);
+  }
+
+  .griglia-opzioni {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 420px) {
+    .griglia-opzioni { grid-template-columns: 1fr; }
+  }
+
+  .carta-opzione {
+    background: var(--osso);
+    border: 3px solid var(--terra);
+    border-radius: 10px;
+    padding: 0.9rem;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.08s ease;
+    position: relative;
+    user-select: none;
+  }
+  .carta-opzione:active { transform: scale(0.97); }
+  .carta-opzione.selezionata { border-color: var(--ocra); border-style: dashed; }
+  .carta-opzione.corretta { border-color: var(--muschio); border-style: solid; background: #e4ead9; }
+
+  .carta-opzione .figura-placeholder {
+    display: block;
+    width: 100%;
+    height: 160px;
+    background: var(--osso-scuro);
+    border: 2px dashed var(--terra);
+    border-radius: 8px;
+    margin-bottom: 0.6rem;
+    object-fit: contain;
+    object-position: center;
+  }
+  .carta-opzione .nome {
+    font-weight: bold;
+    font-size: 1.05rem;
+    margin: 0 0 0.2rem;
+  }
+  .carta-opzione .dieta {
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    color: var(--ocra);
+    margin: 0;
+  }
+
+  .barra-azioni {
+    display: flex;
+    justify-content: center;
+    gap: 0.8rem;
+  }
+  button.bottone {
+    font-family: inherit;
+    font-size: 1.05rem;
+    padding: 0.85rem 1.8rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--terra);
+    color: var(--osso);
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--terra-scuro);
+  }
+  button.bottone:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--terra-scuro); }
+  button.bottone:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+  button.bottone.secondario {
+    background: transparent;
+    color: var(--terra);
+    box-shadow: none;
+    border: 2px solid var(--terra);
+    padding: 0.7rem 1.6rem;
+  }
+
+  .messaggio-esito {
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin: 1.2rem auto 0;
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    max-width: 30rem;
+    display: none;
+  }
+  .messaggio-esito.esito-grande {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    padding: 1.6rem 1.4rem;
+    max-width: 34rem;
+  }
+  .messaggio-esito.mostra { display: block; }
+  .messaggio-esito.esito-ok { background: #e4ead9; border: 2px solid var(--muschio); color: #33452c; }
+  .messaggio-esito.esito-no { background: #f1ded9; border: 2px solid var(--errore); color: #6b2e22; }
+
+  #schermo-fine .centro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1.2rem;
+    padding: 3rem 1.5rem;
+  }
+  #schermo-fine h1 { font-size: 1.6rem; margin: 0; }
+  #schermo-fine p { max-width: 26rem; line-height: 1.6; margin: 0; }
+
+  footer.piede {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    color: var(--terra);
+    opacity: 0.6;
+    padding: 1rem 0 2rem;
+  }
+</style>
+</head>
+<body>
+
+<header class="intro">
+  <p class="etichetta">Attività C</p>
+  <h1>Le caratteristiche morfologiche</h1>
+  <p>Il corpo di un animale o di una pianta può ingannare: due specie che si somigliano non sempre sono parenti stretti. A volte, invece, l'aspetto ci guida davvero verso la parentela giusta. Scopriamolo insieme, un caso alla volta.</p>
+</header>
+
+<p class="progresso-livelli" id="indicatore-livello">Livello 1 di 8</p>
+
+<div id="contenitore-livelli"></div>
+
+<div class="schermo" id="schermo-fine">
+  <div class="centro">
+    <h1>Attività completata</h1>
+    <p>Il corpo racconta una storia, ma a volte inganna: la genetica è lo strumento che ci permette di verificare se la somiglianza nasconde davvero una parentela, o solo una coincidenza evolutiva.</p>
+  </div>
+</div>
+
+<footer class="piede">La matematica dell'evoluzione — Notte dei Ricercatori 2026</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var livelli = [
+    {
+      riferimento: { nome: "Formica alata", dieta: "onnivora", immagine: "images/formica_alata.jpg" },
+      opzioneA: { id: "formica-operaia", nome: "Formica operaia", dieta: "onnivora", immagine: "images/formica.jpg", corretta: true },
+      opzioneB: { id: "lumaca", nome: "Lumaca", dieta: "erbivora", immagine: "images/lumaca.jpg", corretta: false },
+      didascalia: "La formica alata e quella operaia sono la stessa specie: caste diverse della stessa colonia (polimorfismo di casta)."
+    },
+    {
+      riferimento: { nome: "Delfino", dieta: "carnivoro", immagine: "images/delfino.jpg" },
+      opzioneA: { id: "squalo", nome: "Squalo", dieta: "carnivoro", immagine: "images/squalo.jpg", corretta: false },
+      opzioneB: { id: "uomo", nome: "Uomo", dieta: "onnivora", immagine: "images/uomo.jpg", corretta: true },
+      didascalia: "Delfino e Uomo sono entrambi mammiferi, più vicini tra loro che allo squalo, un pesce."
+    },
+    {
+      riferimento: { nome: "Tilacino", dieta: "carnivoro", immagine: "images/tilacino.jpg" },
+      opzioneA: { id: "lupo", nome: "Lupo", dieta: "carnivoro", immagine: "images/lupo.jpg", corretta: false },
+      opzioneB: { id: "canguro", nome: "Canguro", dieta: "erbivoro", immagine: "images/canguro.jpg", corretta: true },
+      didascalia: "Il tilacino è un marsupiale, come il canguro: nonostante l'aspetto, non è un vero lupo."
+    },
+    {
+      riferimento: { nome: "Pipistrello", dieta: "insettivoro", immagine: "images/pipistrello.jpg" },
+      opzioneA: { id: "rondone", nome: "Rondone", dieta: "insettivoro", immagine: "images/rondone.jpg", corretta: false },
+      opzioneB: { id: "topo", nome: "Topo", dieta: "onnivoro", immagine: "images/topo.jpg", corretta: true },
+      didascalia: "Pipistrello e topo sono entrambi mammiferi; il rondone caccia insetti come il pipistrello, ma è un uccello."
+    },
+    {
+      riferimento: { nome: "Cane", dieta: "onnivoro", immagine: "images/cane.jpg" },
+      opzioneA: { id: "coyote", nome: "Coyote", dieta: "onnivoro", immagine: "images/coyote.jpg", corretta: true },
+      opzioneB: { id: "gatto", nome: "Gatto", dieta: "carnivoro", immagine: "images/gatto.jpg", corretta: false },
+      didascalia: "Cane e coyote appartengono allo stesso genere (Canis): qui l'aspetto simile guida davvero alla parentela giusta."
+    },
+    {
+      riferimento: { nome: "Ragno", dieta: "carnivoro", immagine: "images/ragno.jpg" },
+      opzioneA: { id: "insetto-ragno", nome: "Insetto ragno", dieta: "onnivoro", immagine: "images/insettoragno.jpg", corretta: false },
+      opzioneB: { id: "scorpione", nome: "Scorpione", dieta: "carnivoro", immagine: "images/scorpione.jpg", corretta: true },
+      didascalia: "L'insetto ragno è un coleottero, non un aracnide: il vero parente del ragno è lo scorpione."
+    },
+    {
+      riferimento: { nome: "Cactus", dieta: "autotrofo", immagine: "images/cactus.jpg" },
+      opzioneA: { id: "euphorbia", nome: "Euphorbia", dieta: "autotrofa", immagine: "images/euphorbia.jpg", corretta: false },
+      opzioneB: { id: "portulaca", nome: "Portulaca", dieta: "autotrofa", immagine: "images/portulaca.jpg", corretta: true },
+      didascalia: "Cactus ed Euphorbia si somigliano per convergenza evolutiva; il vero parente del cactus è la Portulaca."
+    },
+    {
+      riferimento: { nome: "Coccodrillo", dieta: "carnivoro", immagine: "images/coccodrillo.jpg" },
+      opzioneA: { id: "piccione", nome: "Piccione", dieta: "granivoro", immagine: "images/piccione.jpg", corretta: true },
+      opzioneB: { id: "lucertola", nome: "Lucertola", dieta: "insettivora", immagine: "images/lucertola.jpg", corretta: false },
+      didascalia: "Coccodrilli e uccelli appartengono entrambi al gruppo degli arcosauri, più vicini tra loro che alle lucertole."
+    }
+  ];
+
+  var indiceLivelloCorrente = 0;
+  var contenitore = document.getElementById("contenitore-livelli");
+  var indicatore = document.getElementById("indicatore-livello");
+
+  function mostraSchermo(id) {
+    document.querySelectorAll(".schermo").forEach(function (s) { s.classList.remove("attiva"); });
+    var el = document.getElementById(id);
+    if (el) el.classList.add("attiva");
+    window.scrollTo(0, 0);
+  }
+
+  function costruisciLivello(dati, indice) {
+    var sezione = document.createElement("section");
+    sezione.className = "sezione-gioco schermo";
+    sezione.id = "livello-" + indice;
+
+    var opzioni = [dati.opzioneA, dati.opzioneB];
+    var opzioniHTML = opzioni.map(function (op) {
+      return '' +
+        '<div class="carta-opzione" data-id="' + op.id + '" data-corretta="' + op.corretta + '">' +
+          '<img class="figura-placeholder" src="' + op.immagine + '" alt="' + op.nome + '">' +
+          '<p class="nome">' + op.nome + '</p>' +
+          '<p class="dieta">' + op.dieta + '</p>' +
+        '</div>';
+    }).join("");
+
+    sezione.innerHTML =
+      '<h2>Chi è il parente più prossimo dell\'animale qui sotto?</h2>' +
+      '<p class="istruzioni">Guarda bene, poi scegli.</p>' +
+      '<div class="riferimento">' +
+        '<img class="figura" src="' + dati.riferimento.immagine + '" alt="' + dati.riferimento.nome + '">' +
+        '<p class="nome-rif">' + dati.riferimento.nome + '</p>' +
+        '<p class="dieta-rif">' + dati.riferimento.dieta + '</p>' +
+      '</div>' +
+      '<div class="griglia-opzioni" id="opzioni-' + indice + '">' + opzioniHTML + '</div>' +
+      '<div class="barra-azioni">' +
+        '<button class="bottone" id="btn-verifica-' + indice + '" disabled>Verifica</button>' +
+      '</div>' +
+      '<div class="messaggio-esito" id="esito-' + indice + '"></div>';
+
+    contenitore.appendChild(sezione);
+
+    attivaLivello(dati, indice);
+  }
+
+  function attivaLivello(dati, indice) {
+    var selezione = null;
+    var sezioneCorrente = document.getElementById("livello-" + indice);
+    var carte = document.querySelectorAll("#opzioni-" + indice + " .carta-opzione");
+    var btnVerifica = document.getElementById("btn-verifica-" + indice);
+    var esito = document.getElementById("esito-" + indice);
+
+    carte.forEach(function (carta) {
+      carta.addEventListener("click", function () {
+        carte.forEach(function (c) { c.classList.remove("selezionata"); });
+        carta.classList.add("selezionata");
+        selezione = carta.dataset.id;
+        btnVerifica.disabled = false;
+      });
+    });
+
+    btnVerifica.addEventListener("click", function () {
+      var cartaSelezionata = null;
+      carte.forEach(function (c) { if (c.dataset.id === selezione) cartaSelezionata = c; });
+      var corretta = cartaSelezionata.dataset.corretta === "true";
+
+      esito.classList.remove("esito-ok", "esito-no");
+      esito.classList.add("mostra");
+
+      if (corretta) {
+        carte.forEach(function (c) { c.classList.remove("selezionata"); });
+        cartaSelezionata.classList.add("corretta");
+        esito.classList.add("esito-ok");
+        var etichettaProssimo = indice + 1 < livelli.length ? "Prossimo →" : "Fine →";
+
+        // La didascalia sostituisce le carte, ingrandita, per obbligare a leggerla
+        var contenitoreOpzioni = document.getElementById("opzioni-" + indice);
+        contenitoreOpzioni.style.display = "none";
+        var domandaFissa = sezioneCorrente.querySelector(".domanda-fissa");
+        if (domandaFissa) domandaFissa.style.display = "none";
+
+        esito.classList.add("esito-grande");
+        esito.innerHTML =
+          "<strong>Esatto!</strong><br>" + dati.didascalia +
+          '<br><br><button class="bottone" id="btn-prossimo-' + indice + '" disabled>' + etichettaProssimo + '</button>';
+
+        btnVerifica.style.display = "none";
+        carte.forEach(function (c) { c.style.pointerEvents = "none"; });
+
+        var btnProssimo = document.getElementById("btn-prossimo-" + indice);
+        setTimeout(function () {
+          btnProssimo.disabled = false;
+        }, 6000);
+
+        btnProssimo.addEventListener("click", function () {
+          vaiAlLivello(indice + 1);
+        });
+      } else {
+        esito.classList.add("esito-no");
+        esito.innerHTML = "<strong>Non ancora.</strong><br>Scegli di nuovo e riprova.";
+      }
+    });
+  }
+
+  function vaiAlLivello(indice) {
+    if (indice >= livelli.length) {
+      mostraSchermo("schermo-fine");
+      return;
+    }
+    indiceLivelloCorrente = indice;
+    indicatore.textContent = "Livello " + (indice + 1) + " di " + livelli.length;
+    mostraSchermo("livello-" + indice);
+  }
+
+  livelli.forEach(function (dati, indice) {
+    costruisciLivello(dati, indice);
+  });
+
+  vaiAlLivello(0);
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function (err) {
+        console.warn("Service worker non registrato:", err);
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>

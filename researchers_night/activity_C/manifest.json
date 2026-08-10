@@ -1,0 +1,10 @@
+{
+  "name": "Attività C — Le caratteristiche morfologiche",
+  "short_name": "Morfologia",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f2e9d8",
+  "theme_color": "#6b4a2f",
+  "orientation": "portrait",
+  "icons": []
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Attività B — Gli indizi geografici",
+  "short_name": "Geografia",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f2e9d8",
+  "theme_color": "#6b4a2f",
+  "orientation": "portrait",
+  "icons": []
+}

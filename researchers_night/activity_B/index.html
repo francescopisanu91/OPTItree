@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Attività B — Gli indizi geografici</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --terra: #6b4a2f;
+    --terra-scuro: #4a3220;
+    --osso: #f2e9d8;
+    --osso-scuro: #e3d5b8;
+    --ocra: #c17f2e;
+    --muschio: #4f6b45;
+    --errore: #a34a3a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--osso);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: var(--terra-scuro);
+  }
+
+  .schermo { display: none; }
+  .schermo.attiva { display: block; }
+
+  header.intro {
+    text-align: center;
+    padding: 1.5rem 1rem 1rem;
+  }
+  header.intro .etichetta {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ocra);
+    margin: 0 0 0.3rem;
+  }
+  header.intro h1 { font-size: 1.5rem; margin: 0 0 0.6rem; }
+  header.intro p { max-width: 32rem; margin: 0 auto; line-height: 1.55; font-size: 0.95rem; }
+
+  .indicatore-scroll {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: var(--terra);
+    opacity: 0.7;
+    padding: 0.4rem 0 0.8rem;
+  }
+
+  .sezione-mappa {
+    padding: 0 1rem 2rem;
+  }
+  .cornice-mappa {
+    max-width: 900px;
+    margin: 0 auto;
+    border: 3px solid var(--terra);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 4px 4px 0 rgba(74,50,32,0.15);
+  }
+  .cornice-mappa img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .didascalia-mappa {
+    max-width: 900px;
+    margin: 0.6rem auto 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: var(--terra);
+    text-align: center;
+    opacity: 0.75;
+  }
+
+  .separatore {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    max-width: 32rem;
+    margin: 0 auto 1.5rem;
+    padding: 0 1rem;
+  }
+  .separatore .linea { flex: 1; height: 2px; background: var(--osso-scuro); }
+  .separatore span {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: var(--terra);
+    white-space: nowrap;
+  }
+
+  section.sezione-gioco {
+    padding: 0 1rem 3rem;
+    max-width: 40rem;
+    margin: 0 auto;
+  }
+  section.sezione-gioco h2 {
+    text-align: center;
+    font-size: 1.3rem;
+    margin: 0 0 0.4rem;
+  }
+  section.sezione-gioco > p.istruzioni {
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 1.5rem;
+  }
+
+  .canguro-riferimento {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+  }
+  .canguro-riferimento .figura {
+    display: block;
+    width: 140px;
+    height: 140px;
+    background: var(--osso-scuro);
+    border: 3px solid var(--terra);
+    border-radius: 12px;
+    object-fit: contain;
+    object-position: center;
+  }
+  .canguro-riferimento .nome-rif {
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+
+  .griglia-carte {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 480px) {
+    .griglia-carte { grid-template-columns: 1fr; }
+  }
+
+  .carta-animale {
+    background: var(--osso);
+    border: 3px solid var(--terra);
+    border-radius: 10px;
+    padding: 0.8rem;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.08s ease;
+    position: relative;
+    user-select: none;
+  }
+  .carta-animale:active { transform: scale(0.97); }
+  .carta-animale.selezionata { border-color: var(--ocra); border-style: dashed; }
+  .carta-animale.corretta { border-color: var(--muschio); border-style: solid; background: #e4ead9; }
+  .carta-animale.sbagliata { border-color: var(--errore); border-style: solid; background: #f1ded9; }
+
+  .carta-animale .figura-placeholder {
+    display: block;
+    width: 100%;
+    height: 180px;
+    background: var(--osso-scuro);
+    border: 2px dashed var(--terra);
+    border-radius: 8px;
+    margin-bottom: 0.6rem;
+    object-fit: contain;
+    object-position: center;
+  }
+  .carta-animale .nome {
+    font-weight: bold;
+    font-size: 1.05rem;
+    margin: 0 0 0.2rem;
+  }
+  .carta-animale .paese {
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    color: var(--ocra);
+    margin: 0;
+  }
+  .carta-animale .esito-testo {
+    display: none;
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    margin-top: 0.4rem;
+    font-weight: bold;
+  }
+  .carta-animale.corretta .esito-testo, .carta-animale.sbagliata .esito-testo { display: block; }
+  .carta-animale.corretta .esito-testo { color: var(--muschio); }
+  .carta-animale.sbagliata .esito-testo { color: var(--errore); }
+
+  .barra-azioni {
+    display: flex;
+    justify-content: center;
+    gap: 0.8rem;
+  }
+  button.bottone {
+    font-family: inherit;
+    font-size: 1.05rem;
+    padding: 0.85rem 1.8rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--terra);
+    color: var(--osso);
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--terra-scuro);
+  }
+  button.bottone:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--terra-scuro); }
+  button.bottone:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+  .messaggio-esito {
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin: 1.2rem auto 0;
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    max-width: 30rem;
+    display: none;
+  }
+  .messaggio-esito.mostra { display: block; }
+  .messaggio-esito.esito-ok { background: #e4ead9; border: 2px solid var(--muschio); color: #33452c; }
+  .messaggio-esito.esito-no { background: #f1ded9; border: 2px solid var(--errore); color: #6b2e22; }
+
+  footer.piede {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    color: var(--terra);
+    opacity: 0.6;
+    padding: 1rem 0 2rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="schermo attiva" id="schermo-1">
+
+<header class="intro">
+  <p class="etichetta">Attività B</p>
+  <h1>Gli indizi geografici</h1>
+  <p>Guarda la mappa: molti continenti oggi lontanissimi erano uniti in un unico supercontinente, il Gondwana. Quando si è spaccato, alcuni animali sono rimasti "intrappolati" ciascuno sul proprio pezzo.</p>
+</header>
+
+<p class="indicatore-scroll">↓ scorri per vedere la mappa, poi il gioco ↓</p>
+
+<div class="sezione-mappa">
+  <div class="cornice-mappa">
+    <img src="images/gondwana.png" alt="Mappa del supercontinente Gondwana, circa 600-180 milioni di anni fa, con Sud America, Africa, Antartide, Australia, India e Arabia ancora uniti">
+  </div>
+  <p class="didascalia-mappa">Il Gondwana, circa 600–180 milioni di anni fa — mappa generata con IA a scopo illustrativo</p>
+</div>
+
+<div class="separatore"><div class="linea"></div><span>IL GIOCO</span><div class="linea"></div></div>
+
+<section class="sezione-gioco">
+  <h2>Chi è parente del canguro?</h2>
+  <p class="istruzioni">Tocca le due carte che pensi siano davvero parenti stretti del canguro. Non basta vivere nello stesso posto: serve essere lo stesso tipo di animale.</p>
+
+  <div class="canguro-riferimento">
+    <img class="figura" src="images/canguro.jpg" alt="Canguro">
+    <p class="nome-rif">Canguro — Australia</p>
+  </div>
+
+  <div class="griglia-carte" id="griglia-carte-1">
+    <div class="carta-animale" data-id="dingo" data-corretta="false" data-spiegazione-corretta="" data-spiegazione-trappola="vive in Australia, ma è arrivato dall'Asia: non è un marsupiale">
+      <img class="figura-placeholder" src="images/dingo.jpg" alt="Dingo">
+      <p class="nome">Dingo</p>
+      <p class="paese">Australia</p>
+      <p class="esito-testo"></p>
+    </div>
+    <div class="carta-animale" data-id="koala" data-corretta="true" data-spiegazione-corretta="è un marsupiale, come il canguro" data-spiegazione-trappola="">
+      <img class="figura-placeholder" src="images/koala.jpg" alt="Koala">
+      <p class="nome">Koala</p>
+      <p class="paese">Australia</p>
+      <p class="esito-testo"></p>
+    </div>
+    <div class="carta-animale" data-id="opossum" data-corretta="true" data-spiegazione-corretta="è un marsupiale, come il canguro" data-spiegazione-trappola="">
+      <img class="figura-placeholder" src="images/opossum.jpg" alt="Opossum">
+      <p class="nome">Opossum</p>
+      <p class="paese">Sud America</p>
+      <p class="esito-testo"></p>
+    </div>
+    <div class="carta-animale" data-id="platipo" data-corretta="false" data-spiegazione-corretta="" data-spiegazione-trappola="vive in Australia, ma è un monotrema: depone le uova">
+      <img class="figura-placeholder" src="images/ornitorinco.png" alt="Platipo">
+      <p class="nome">Platipo</p>
+      <p class="paese">Australia</p>
+      <p class="esito-testo"></p>
+    </div>
+  </div>
+
+  <div class="barra-azioni">
+    <button class="bottone" id="btn-verifica-1" disabled>Verifica</button>
+  </div>
+
+  <div class="messaggio-esito" id="esito-quiz-1"></div>
+</section>
+
+</div>
+
+<div class="schermo" id="schermo-2">
+
+<div class="separatore" style="margin-top:1.5rem;"><div class="linea"></div><span>LIVELLO 2</span><div class="linea"></div></div>
+
+<section class="sezione-gioco">
+  <h2>Chi è parente dello struzzo?</h2>
+  <p class="istruzioni">Lo struzzo appartiene a un gruppo di uccelli speciali, chiamati ratiti: non volano e sono sparsi su continenti lontanissimi. Tocca le tre carte che pensi siano davvero suoi parenti stretti. Attenzione: non basta essere grandi o non saper volare.</p>
+
+  <div class="canguro-riferimento">
+    <img class="figura" src="images/struzzo.jpg" alt="Struzzo">
+    <p class="nome-rif">Struzzo — Africa</p>
+  </div>
+
+  <div class="griglia-carte" id="griglia-carte-2">
+  <div class="carta-animale" data-id="emu" data-corretta="true" data-spiegazione-corretta="è un ratite, come lo struzzo" data-spiegazione-trappola="">
+    <img class="figura-placeholder" src="images/emu.jpg" alt="Emù">
+    <p class="nome">Emù</p>
+    <p class="paese">Australia</p>
+    <p class="esito-testo"></p>
+  </div>
+  <div class="carta-animale" data-id="fenicottero" data-corretta="false" data-spiegazione-corretta="" data-spiegazione-trappola="ha zampe lunghe come lo struzzo, ma non è un ratite">
+    <img class="figura-placeholder" src="images/fenicottero.jpg" alt="Fenicottero">
+    <p class="nome">Fenicottero</p>
+    <p class="paese">Africa</p>
+    <p class="esito-testo"></p>
+  </div>
+  <div class="carta-animale" data-id="kakapo" data-corretta="false" data-spiegazione-corretta="" data-spiegazione-trappola="vive in Nuova Zelanda come il kiwi, ma è un pappagallo">
+    <img class="figura-placeholder" src="images/kakapo.jpg" alt="Kakapo">
+    <p class="nome">Kakapo</p>
+    <p class="paese">Nuova Zelanda</p>
+    <p class="esito-testo"></p>
+  </div>
+  <div class="carta-animale" data-id="kiwi" data-corretta="true" data-spiegazione-corretta="è un ratite, come lo struzzo" data-spiegazione-trappola="">
+    <img class="figura-placeholder" src="images/kiwi.png" alt="Kiwi">
+    <p class="nome">Kiwi</p>
+    <p class="paese">Nuova Zelanda</p>
+    <p class="esito-testo"></p>
+  </div>
+  <div class="carta-animale" data-id="otarda" data-corretta="false" data-spiegazione-corretta="" data-spiegazione-trappola="vive in Africa come lo struzzo, ma non è un ratite">
+    <img class="figura-placeholder" src="images/otarda.jpg" alt="Otarda">
+    <p class="nome">Otarda</p>
+    <p class="paese">Africa</p>
+    <p class="esito-testo"></p>
+  </div>
+  <div class="carta-animale" data-id="pinguino" data-corretta="false" data-spiegazione-corretta="" data-spiegazione-trappola="non sa volare come lo struzzo, ma appartiene a un altro gruppo">
+    <img class="figura-placeholder" src="images/pinguino.jpg" alt="Pinguino">
+    <p class="nome">Pinguino</p>
+    <p class="paese">Antartide</p>
+    <p class="esito-testo"></p>
+  </div>
+  <div class="carta-animale" data-id="rea" data-corretta="true" data-spiegazione-corretta="è un ratite, come lo struzzo" data-spiegazione-trappola="">
+    <img class="figura-placeholder" src="images/rea.png" alt="Rea">
+    <p class="nome">Rea</p>
+    <p class="paese">Sud America</p>
+    <p class="esito-testo"></p>
+  </div>
+</div>
+
+  <div class="barra-azioni">
+    <button class="bottone" id="btn-verifica-2" disabled>Verifica</button>
+  </div>
+
+  <div class="messaggio-esito" id="esito-quiz-2"></div>
+</section>
+
+</div>
+
+<footer class="piede">La matematica dell'evoluzione — Notte dei Ricercatori 2026</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  function attivaQuizAssociativo(config) {
+    var selezione = new Set();
+    var verificato = false;
+    var carte = document.querySelectorAll(config.selettoreCarte);
+    var btnVerifica = document.getElementById(config.idBottone);
+    var esito = document.getElementById(config.idEsito);
+
+    carte.forEach(function (carta) {
+      carta.addEventListener("click", function () {
+        if (verificato) return;
+        var id = carta.dataset.id;
+        if (selezione.has(id)) {
+          selezione.delete(id);
+          carta.classList.remove("selezionata");
+        } else {
+          if (selezione.size >= config.numeroDaSelezionare) return;
+          selezione.add(id);
+          carta.classList.add("selezionata");
+        }
+        btnVerifica.disabled = selezione.size !== config.numeroDaSelezionare;
+      });
+    });
+
+    btnVerifica.addEventListener("click", function () {
+      verificato = true;
+      var tutteCorrette = true;
+
+      carte.forEach(function (carta) {
+        var id = carta.dataset.id;
+        var eCorretta = carta.dataset.corretta === "true";
+        var selezionata = selezione.has(id);
+        var testoEsito = carta.querySelector(".esito-testo");
+
+        carta.classList.remove("selezionata");
+
+        if (selezionata && eCorretta) {
+          carta.classList.add("corretta");
+          testoEsito.textContent = "✓ " + carta.dataset.spiegazioneCorretta;
+        } else if (selezionata && !eCorretta) {
+          carta.classList.add("sbagliata");
+          testoEsito.textContent = "✗ " + carta.dataset.spiegazioneTrappola;
+          tutteCorrette = false;
+        } else if (!selezionata && eCorretta) {
+          carta.classList.add("sbagliata");
+          testoEsito.textContent = "✗ ti è sfuggito: " + carta.dataset.spiegazioneCorretta;
+          tutteCorrette = false;
+        }
+      });
+
+      esito.classList.remove("esito-ok", "esito-no");
+      esito.classList.add("mostra");
+      if (tutteCorrette) {
+        esito.classList.add("esito-ok");
+        esito.innerHTML = config.messaggioCorretto;
+      } else {
+        esito.classList.add("esito-no");
+        esito.innerHTML = config.messaggioSbagliato;
+      }
+
+      btnVerifica.disabled = true;
+    });
+  }
+
+  attivaQuizAssociativo({
+    selettoreCarte: "#griglia-carte-1 .carta-animale",
+    idBottone: "btn-verifica-1",
+    idEsito: "esito-quiz-1",
+    numeroDaSelezionare: 2,
+    messaggioCorretto: "<strong>Esatto!</strong><br>Koala e opossum sono marsupiali, anche se vivono su continenti diversi. Platipo e dingo vivono in Australia come il canguro, ma non sono suoi parenti stretti.<br><br><button class=\"bottone\" id=\"btn-continua-livello2\">Continua →</button>",
+    messaggioSbagliato: "<strong>Non proprio.</strong><br>Guarda i segni ✓ e ✗ su ogni carta. Vivere nello stesso posto non basta per essere parenti: conta il tipo di animale, non il continente."
+  });
+
+  attivaQuizAssociativo({
+    selettoreCarte: "#griglia-carte-2 .carta-animale",
+    idBottone: "btn-verifica-2",
+    idEsito: "esito-quiz-2",
+    numeroDaSelezionare: 3,
+    messaggioCorretto: "<strong>Esatto!</strong><br>Rea, emù e kiwi sono parenti stretti dello struzzo: fanno tutti parte del gruppo dei ratiti. Otarda, pinguino, fenicottero e kakapo non volano o vivono negli stessi luoghi, ma appartengono a famiglie completamente diverse.",
+    messaggioSbagliato: "<strong>Non proprio.</strong><br>Guarda i segni ✓ e ✗ su ogni carta. Non basta essere grandi, non volare, o vivere vicino: conta la vera parentela."
+  });
+
+  function mostraSchermo(id) {
+    document.querySelectorAll(".schermo").forEach(function (s) { s.classList.remove("attiva"); });
+    document.getElementById(id).classList.add("attiva");
+    window.scrollTo(0, 0);
+  }
+
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.id === "btn-continua-livello2") {
+      mostraSchermo("schermo-2");
+    }
+  });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function (err) {
+        console.warn("Service worker non registrato:", err);
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>

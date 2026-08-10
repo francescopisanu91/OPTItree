@@ -408,20 +408,32 @@
           <line x1="312" y1="310" x2="312" y2="640" stroke="#6b4a2f" stroke-width="2"/>
           <line x1="546" y1="310" x2="546" y2="640" stroke="#6b4a2f" stroke-width="2"/>
 
-          <!-- Theropoda -> 4 foglie -->
+          <!-- Theropoda -> struttura filogenetica reale: Allosaurus (Allosauroidea) è fuori da Coelurosauria, si separa per primo -->
           <line x1="1027" y1="273" x2="1027" y2="310" stroke="#6b4a2f" stroke-width="2"/>
-          <line x1="676" y1="310" x2="1378" y2="310" stroke="#6b4a2f" stroke-width="2"/>
-          <line x1="676" y1="310" x2="676" y2="640" stroke="#6b4a2f" stroke-width="2"/>
-          <line x1="910" y1="310" x2="910" y2="640" stroke="#6b4a2f" stroke-width="2"/>
-          <line x1="1144" y1="310" x2="1144" y2="640" stroke="#6b4a2f" stroke-width="2"/>
-          <line x1="1378" y1="310" x2="1378" y2="640" stroke="#6b4a2f" stroke-width="2"/>
+          <line x1="676" y1="310" x2="1144" y2="310" stroke="#6b4a2f" stroke-width="2"/>
+          <line x1="676" y1="310" x2="676" y2="640" stroke="#6b4a2f" stroke-width="2" marker-end="url(#puntafreccia)"/>
+          <line x1="1144" y1="310" x2="1144" y2="383" stroke="#6b4a2f" stroke-width="2" marker-end="url(#puntafreccia)"/>
 
-          <!-- Ornithischia -> 3 foglie -->
+          <!-- dentro Coelurosauria: Tyrannosaurus (Tyrannosauroidea) si separa per primo dal resto -->
+          <line x1="910" y1="383" x2="1261" y2="383" stroke="#6b4a2f" stroke-width="2"/>
+          <line x1="910" y1="383" x2="910" y2="640" stroke="#6b4a2f" stroke-width="2" marker-end="url(#puntafreccia)"/>
+          <line x1="1261" y1="383" x2="1261" y2="486" stroke="#6b4a2f" stroke-width="2" marker-end="url(#puntafreccia)"/>
+
+          <!-- Paraves: Archaeopteryx (Avialae) e Velociraptor (Deinonychosauria) sono i più imparentati tra loro -->
+          <line x1="1144" y1="486" x2="1378" y2="486" stroke="#6b4a2f" stroke-width="2"/>
+          <line x1="1144" y1="486" x2="1144" y2="640" stroke="#6b4a2f" stroke-width="2" marker-end="url(#puntafreccia)"/>
+          <line x1="1378" y1="486" x2="1378" y2="640" stroke="#6b4a2f" stroke-width="2" marker-end="url(#puntafreccia)"/>
+
+          <!-- Ornithischia -> struttura reale: Thyreophora (Stegosaurus+Ankylosaurus) vs Cerapoda (Triceratops) -->
           <line x1="1976" y1="172" x2="1976" y2="310" stroke="#6b4a2f" stroke-width="2"/>
-          <line x1="1742" y1="310" x2="2210" y2="310" stroke="#6b4a2f" stroke-width="2"/>
-          <line x1="1742" y1="310" x2="1742" y2="640" stroke="#6b4a2f" stroke-width="2"/>
-          <line x1="1976" y1="310" x2="1976" y2="640" stroke="#6b4a2f" stroke-width="2"/>
-          <line x1="2210" y1="310" x2="2210" y2="640" stroke="#6b4a2f" stroke-width="2"/>
+          <line x1="1859" y1="310" x2="2210" y2="310" stroke="#6b4a2f" stroke-width="2"/>
+          <line x1="1859" y1="310" x2="1859" y2="383" stroke="#6b4a2f" stroke-width="2" marker-end="url(#puntafreccia)"/>
+          <line x1="2210" y1="310" x2="2210" y2="640" stroke="#6b4a2f" stroke-width="2" marker-end="url(#puntafreccia)"/>
+
+          <!-- dentro Thyreophora: Stegosaurus vs Ankylosaurus -->
+          <line x1="1742" y1="383" x2="1976" y2="383" stroke="#6b4a2f" stroke-width="2"/>
+          <line x1="1742" y1="383" x2="1742" y2="640" stroke="#6b4a2f" stroke-width="2" marker-end="url(#puntafreccia)"/>
+          <line x1="1976" y1="383" x2="1976" y2="640" stroke="#6b4a2f" stroke-width="2" marker-end="url(#puntafreccia)"/>
 
           <!-- 9 punti-foglia: cerchi grandi, senza etichetta, coordinate salvate anche in JS -->
           <circle class="punto-foglia" data-foglia="1" cx="312" cy="640" r="16"/>
@@ -477,12 +489,12 @@
     { id: "brachiosaurus",  nome: "Brachiosaurus",   eta: "154-150 Ma", regione: "Nord America", immagine: "images/Brachiosaurus.png",   foglia: "1" },
     { id: "argentinosaurus",nome: "Argentinosaurus", eta: "97-94 Ma",   regione: "Sud America",  immagine: "images/argentinosaurus.png", foglia: "2" },
     { id: "allosaurus",     nome: "Allosaurus",      eta: "150-144 Ma", regione: "Nord America", immagine: "images/allosaurus.png",      foglia: "3" },
-    { id: "archaeopteryx",  nome: "Archaeopteryx",   eta: "~150 Ma",    regione: "Europa",       immagine: "images/Archaeopteryx.png",   foglia: "4" },
-    { id: "velociraptor",   nome: "Velociraptor",    eta: "75-71 Ma",   regione: "Asia",         immagine: "images/velociraptor.jpeg",   foglia: "5" },
-    { id: "tyrannosaurus",  nome: "Tyrannosaurus",   eta: "67-66 Ma",   regione: "Nord America", immagine: "images/t_rex.png",           foglia: "6" },
+    { id: "tyrannosaurus",  nome: "Tyrannosaurus",   eta: "67-66 Ma",   regione: "Nord America", immagine: "images/t_rex.png",           foglia: "4" },
+    { id: "archaeopteryx",  nome: "Archaeopteryx",   eta: "~150 Ma",    regione: "Europa",       immagine: "images/Archaeopteryx.png",   foglia: "5" },
+    { id: "velociraptor",   nome: "Velociraptor",    eta: "75-71 Ma",   regione: "Asia",         immagine: "images/velociraptor.jpeg",   foglia: "6" },
     { id: "stegosaurus",    nome: "Stegosaurus",     eta: "155-150 Ma", regione: "Nord America", immagine: "images/stegosaurus.jpeg",    foglia: "7" },
-    { id: "triceratops",    nome: "Triceratops",     eta: "~68 Ma",     regione: "Nord America", immagine: "images/triceratopos.png",    foglia: "8" },
-    { id: "ankylosaurus",   nome: "Ankylosaurus",    eta: "70-66 Ma",   regione: "Nord America", immagine: "images/ankilosaurus.png",    foglia: "9" }
+    { id: "ankylosaurus",   nome: "Ankylosaurus",    eta: "70-66 Ma",   regione: "Nord America", immagine: "images/ankilosaurus.png",    foglia: "8" },
+    { id: "triceratops",    nome: "Triceratops",     eta: "~68 Ma",     regione: "Nord America", immagine: "images/triceratopos.png",    foglia: "9" }
   ];
 
   function mostraSchermo(id) {
@@ -697,13 +709,50 @@
     bottoneVerifica.disabled = (contatore < 9);
   }
 
+  // Gruppi di foglie "sorelle dirette" (cherries): la posizione tra loro è scientificamente
+  // interscambiabile, quindi la verifica accetta qualunque permutazione interna al gruppo.
+  var gruppiIntercambiabili = [
+    ["1", "2"], // Brachiosaurus + Argentinosaurus (Sauropodomorpha)
+    ["5", "6"], // Archaeopteryx + Velociraptor (Paraves)
+    ["7", "8"]  // Stegosaurus + Ankylosaurus (Thyreophora)
+  ];
+
+  function gruppoDellaFoglia(numeroFoglia) {
+    for (var i = 0; i < gruppiIntercambiabili.length; i++) {
+      if (gruppiIntercambiabili[i].indexOf(numeroFoglia) !== -1) return gruppiIntercambiabili[i];
+    }
+    return [numeroFoglia]; // foglia senza gruppo: deve stare esattamente lì
+  }
+
   function verificaFilogenia() {
     var tutteCorrette = true;
+
+    // Per ogni gruppo intercambiabile, controlla che l'INSIEME delle specie del gruppo
+    // occupi esattamente l'insieme delle foglie del gruppo, in qualunque ordine.
+    var risultatoPerSpecie = {}; // id specie -> true/false
+
+    gruppiIntercambiabili.forEach(function (gruppo) {
+      var specieDelGruppo = specie.filter(function (s) { return gruppo.indexOf(s.foglia) !== -1; });
+      var foglieOccupateDelGruppo = specieDelGruppo.map(function (s) {
+        var carta = document.querySelector('.carta[data-id="' + s.id + '"]');
+        return carta.dataset.fogliaAttuale;
+      });
+      var insiemeCorretto = foglieOccupateDelGruppo.slice().sort().join(",") === gruppo.slice().sort().join(",");
+      specieDelGruppo.forEach(function (s) { risultatoPerSpecie[s.id] = insiemeCorretto; });
+    });
+
+    // Foglie senza gruppo (nessuna cherry): posizione esatta richiesta come prima
+    specie.forEach(function (s) {
+      if (risultatoPerSpecie.hasOwnProperty(s.id)) return; // già valutata come parte di un gruppo
+      var carta = document.querySelector('.carta[data-id="' + s.id + '"]');
+      risultatoPerSpecie[s.id] = (carta.dataset.fogliaAttuale === s.foglia);
+    });
+
     specie.forEach(function (s) {
       var carta = document.querySelector('.carta[data-id="' + s.id + '"]');
       carta.classList.remove("corretta", "sbagliata");
       var segno = carta.querySelector(".segno");
-      if (carta.dataset.fogliaAttuale === s.foglia) {
+      if (risultatoPerSpecie[s.id]) {
         carta.classList.add("corretta");
         segno.textContent = "✓";
       } else {

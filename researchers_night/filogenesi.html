@@ -1,0 +1,2724 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Albero evolutivo — mutazioni binarie live</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #0a0d14;
+    --bg-2: #0e131d;
+    --grid: #141a26;
+    --node-face: #101826;
+    --node-edge: #2a3550;
+    --branch: #2f3d5c;
+    --branch-glow: rgba(80,220,255,0.25);
+    --ink: #e7ecf5;
+    --ink-dim: #7a86a8;
+    --cyan: #4fd9ff;
+    --acid: #b6ff3c;
+    --mutation: #ff3b5c;
+    --mutation-glow: rgba(255,59,92,0.55);
+    --amber: #ffb547;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html,body{
+    margin:0; padding:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    height:100%;
+    overflow:hidden;
+  }
+
+  body{
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(79,217,255,0.08), transparent),
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: auto, 42px 42px, 42px 42px;
+    background-position: 0 0, -1px -1px, -1px -1px;
+  }
+
+  .app{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+  }
+
+  header{
+    padding: 18px 26px 14px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    border-bottom: 1px solid #182236;
+    background: linear-gradient(180deg, rgba(14,19,29,0.9), rgba(14,19,29,0.4));
+    backdrop-filter: blur(6px);
+    z-index: 5;
+  }
+
+  .brand{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+
+  .brand .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cyan);
+  }
+
+  .brand h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size: 26px;
+    margin:0;
+    letter-spacing: -0.01em;
+  }
+
+  .brand h1 .accent{ color: var(--mutation); }
+
+  .stats{
+    display:flex;
+    gap: 22px;
+    font-size: 12px;
+    color: var(--ink-dim);
+  }
+
+  .stats b{
+    color: var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 15px;
+    display:block;
+    font-weight: 700;
+  }
+
+  .stat-item{ text-align:right; min-width: 70px; }
+
+  main{
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    min-height: 0;
+  }
+
+  #treeArea{
+    flex: 1;
+    position: relative;
+    min-width: 0;
+    transition: flex-basis .25s ease;
+  }
+
+  #viewport{
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+  }
+  #viewport:active{ cursor: grabbing; }
+
+  svg{ display:block; width:100%; height:100%; }
+  #canvas{ width:100%; height:100%; }
+
+  .branch-path{
+    fill:none;
+    stroke: var(--branch);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+  }
+
+  .branch-path.grown{
+    stroke: #3b4a6e;
+  }
+
+  .branch-path.clone-branch{
+    stroke: #232d45;
+    stroke-dasharray: 3 5;
+  }
+
+  .branch-weight{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    fill: var(--ink-dim);
+    text-anchor: middle;
+  }
+
+  .branch-weight.clone-weight{
+    fill: #3a4560;
+    font-size: 7.5px;
+  }
+
+  .node-group{ cursor: default; }
+
+  .node-capsule{
+    fill: var(--node-face);
+    stroke: var(--node-edge);
+    stroke-width: 1.4;
+  }
+
+  .node-capsule.root{
+    stroke: var(--acid);
+  }
+
+  .node-capsule.leaf{
+    stroke: var(--cyan);
+  }
+
+  .node-capsule.flash{
+    stroke: var(--amber);
+    filter: drop-shadow(0 0 10px rgba(255,181,71,0.9));
+  }
+
+  .ubt-dot{
+    fill: var(--cyan);
+    stroke: #0a0d14;
+    stroke-width: 1.5;
+  }
+
+  .ubt-dot.flash-dot{
+    fill: var(--amber);
+    filter: drop-shadow(0 0 8px rgba(255,181,71,0.9));
+  }
+
+  .node-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    dominant-baseline: middle;
+    letter-spacing: 0.02em;
+  }
+
+  .bit{ fill: var(--ink); }
+  .bit.mutated{
+    fill: var(--mutation);
+    filter: drop-shadow(0 0 6px var(--mutation-glow));
+  }
+
+  .node-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 7.5px;
+    fill: var(--ink-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .node-tag.leaf-tag{ fill: var(--cyan); }
+  .node-tag.root-tag{ fill: var(--acid); }
+
+  /* controls */
+  .controls{
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 14px 22px 18px;
+    display:flex;
+    align-items:center;
+    gap: 16px;
+    background: linear-gradient(0deg, rgba(10,13,20,0.96), rgba(10,13,20,0.0));
+    z-index: 5;
+    flex-wrap: wrap;
+  }
+
+  .btn{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    border-radius: 999px;
+    border: 1px solid #2a3550;
+    background: #121a29;
+    color: var(--ink);
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all .15s ease;
+    display:flex;
+    align-items:center;
+    gap: 8px;
+  }
+  .btn:hover{ border-color: var(--cyan); color: var(--cyan); }
+  .btn:active{ transform: scale(0.96); }
+  .btn.primary{
+    background: linear-gradient(135deg, #163044, #0e2233);
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 18px rgba(79,217,255,0.18);
+  }
+  .btn.primary:hover{
+    box-shadow: 0 0 24px rgba(79,217,255,0.35);
+  }
+  .btn:disabled{ opacity: 0.35; cursor: not-allowed; }
+
+  .btn.toggled{
+    background: linear-gradient(135deg, #2a1630, #1a0e22);
+    border-color: var(--acid);
+    color: var(--acid);
+    box-shadow: 0 0 18px rgba(182,255,60,0.18);
+  }
+
+  .btn svg{ width:14px; height:14px; }
+
+  .speed-group{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--ink-dim);
+    background: #0e1420;
+    border: 1px solid #1c2740;
+    border-radius: 999px;
+    padding: 6px 8px 6px 14px;
+  }
+
+  .speed-group input[type=range]{
+    width: 110px;
+    accent-color: var(--cyan);
+  }
+
+  .seed-group{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .seed-group input[type=text]{
+    font-family:'IBM Plex Mono', monospace;
+    background: #0e1420;
+    border: 1px solid #1c2740;
+    color: var(--acid);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    width: 130px;
+  }
+  .seed-group input[type=text]:focus{
+    outline: none;
+    border-color: var(--cyan);
+  }
+
+  .legend{
+    position:absolute;
+    top: 14px;
+    right: 22px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    background: rgba(14,19,29,0.85);
+    border: 1px solid #1c2740;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--ink-dim);
+    z-index: 4;
+    backdrop-filter: blur(4px);
+  }
+  .legend-row{ display:flex; align-items:center; gap:8px; }
+  .swatch{ width:10px; height:10px; border-radius:3px; }
+
+  ::-webkit-scrollbar{ width:0; height:0; }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition: none !important; animation: none !important; }
+  }
+
+  @media (max-width: 720px){
+    header{ padding: 14px 16px 10px; }
+    .brand h1{ font-size: 20px; }
+    .stats{ display:none; }
+    .controls{ padding: 12px 14px 14px; }
+    .seed-group{ margin-left: 0; width:100%; order: 5; }
+    .seed-group input[type=text]{ flex:1; }
+    .legend{ display:none; }
+  }
+
+  /* ---------- Pannello matrice delle distanze ---------- */
+  #matrixPanel{
+    width: 0;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-left: 1px solid #182236;
+    background: linear-gradient(180deg, rgba(14,19,29,0.98), rgba(10,13,20,0.98));
+    display: flex;
+    flex-direction: column;
+    transition: width .3s ease;
+  }
+  #matrixPanel.open{
+    width: min(46%, 560px);
+  }
+
+  .matrix-inner{
+    width: min(46vw, 560px);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 18px 18px;
+    gap: 12px;
+    overflow: auto;
+  }
+
+  .matrix-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+  }
+
+  .matrix-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .matrix-close{
+    background: none;
+    border: 1px solid #1c2740;
+    color: var(--ink-dim);
+    border-radius: 8px;
+    width: 28px; height: 28px;
+    cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .matrix-close:hover{ color: var(--mutation); border-color: var(--mutation); }
+
+  .metric-tabs{
+    display:flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .metric-tab{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid #1c2740;
+    background: #0e1420;
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .metric-tab:hover{ color: var(--ink); border-color: #2a3550; }
+  .metric-tab.active{
+    background: linear-gradient(135deg, #163044, #0e2233);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .metric-desc{
+    font-size: 11px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+    padding: 8px 10px;
+    background: #0e1420;
+    border-radius: 8px;
+    border: 1px solid #16203350;
+  }
+
+  .matrix-warning{
+    font-size: 11.5px;
+    color: var(--amber);
+    background: rgba(255,181,71,0.08);
+    border: 1px solid rgba(255,181,71,0.3);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: none;
+  }
+  .matrix-warning.show{ display:block; }
+
+  .matrix-scroll{
+    overflow: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  table.dist-matrix{
+    border-collapse: collapse;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+  }
+
+  table.dist-matrix th, table.dist-matrix td{
+    padding: 0;
+    text-align: center;
+  }
+
+  table.dist-matrix th{
+    color: var(--cyan);
+    font-weight: 600;
+    font-size: 10px;
+    padding: 4px 3px;
+    min-width: 46px;
+  }
+
+  table.dist-matrix th.corner{ color: var(--ink-dim); }
+
+  table.dist-matrix td{
+    width: 46px;
+    height: 32px;
+    border: 1px solid #0a0d14;
+    cursor: pointer;
+    position: relative;
+    color: #0a0d14;
+    font-weight: 600;
+    transition: transform .1s ease, outline .1s ease;
+  }
+  table.dist-matrix td:hover{
+    outline: 2px solid var(--cyan);
+    outline-offset: -2px;
+    z-index: 2;
+  }
+  table.dist-matrix td.selected-cell{
+    outline: 2.5px solid var(--amber);
+    outline-offset: -2.5px;
+    z-index: 3;
+  }
+  table.dist-matrix td.diag-cell{
+    cursor: default;
+    color: var(--ink-dim);
+    background: #10182a !important;
+  }
+
+  .matrix-legend{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    font-size: 10px;
+    color: var(--ink-dim);
+  }
+  .matrix-legend .gradient-bar{
+    width: 120px;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #16324a, #4fd9ff, #b6ff3c, #ff3b5c);
+  }
+
+  .matrix-empty{
+    font-size: 12px;
+    color: var(--ink-dim);
+    text-align: center;
+    padding: 30px 10px;
+    line-height: 1.6;
+  }
+
+  /* dropdown azioni */
+  .action-select{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    background: #121a29;
+    color: var(--ink);
+    border: 1px solid #2a3550;
+    border-radius: 999px;
+    padding: 10px 16px;
+    cursor: pointer;
+  }
+  .action-select:hover{ border-color: var(--cyan); }
+
+  /* leaf highlight sull'albero */
+  .node-capsule.highlighted{
+    stroke: var(--amber);
+    stroke-width: 2.6;
+    filter: drop-shadow(0 0 12px rgba(255,181,71,0.85));
+  }
+
+  /* ---------- Sezione Neighbor Joining ---------- */
+  .nj-section{
+    border-top: 1px solid #182236;
+    padding-top: 14px;
+    margin-top: 4px;
+    display:flex;
+    flex-direction:column;
+    gap: 10px;
+  }
+
+  .nj-scroll{
+    overflow: hidden;
+    border: 1px solid #16203350;
+    border-radius: 10px;
+    background: #0a0e17;
+    min-height: 260px;
+    max-height: 420px;
+    height: 320px;
+    position: relative;
+    cursor: grab;
+    touch-action: none;
+  }
+  .nj-scroll:active{ cursor: grabbing; }
+
+  .nj-scroll svg{ display:block; width:100%; height:100%; }
+
+  .nj-node-dot{
+    fill: var(--cyan);
+    stroke: #0a0d14;
+    stroke-width: 1.4;
+  }
+  .nj-node-dot.internal{
+    fill: #46577f;
+    r: 4;
+  }
+  .nj-node-dot.nj-dragging{
+    opacity: 0.35;
+  }
+  .nj-ghost{
+    fill: var(--amber);
+    stroke: #0a0d14;
+    stroke-width: 1.5;
+    filter: drop-shadow(0 0 10px rgba(255,181,71,0.9));
+    pointer-events: none;
+  }
+  .nj-ghost-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    fill: var(--amber);
+    font-weight: 700;
+    pointer-events: none;
+  }
+  .nj-target-highlight{
+    fill: none;
+    stroke: var(--acid);
+    stroke-width: 2;
+    stroke-dasharray: 3 3;
+    pointer-events: none;
+  }
+  .nj-leaf-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    fill: var(--ink);
+    font-weight: 600;
+  }
+  .nj-edge{
+    stroke: #3b4a6e;
+    stroke-width: 2;
+    fill: none;
+  }
+  .nj-edge.edge-correct{ stroke: var(--acid); }
+  .nj-edge.edge-wrong{ stroke: var(--mutation); }
+  .nj-weight-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 8.5px;
+    fill: var(--ink-dim);
+  }
+
+  .verify-result{
+    display:none;
+    align-items:center;
+    gap: 10px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 10px;
+  }
+  .verify-result.show{ display:flex; }
+  .verify-result.pass{
+    background: rgba(182,255,60,0.1);
+    border: 1px solid rgba(182,255,60,0.4);
+    color: var(--acid);
+  }
+  .verify-result.fail{
+    background: rgba(255,59,92,0.1);
+    border: 1px solid rgba(255,59,92,0.4);
+    color: var(--mutation);
+  }
+  .verify-result .pct{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--ink-dim);
+  }
+
+  /* ---------- Tab pannello (Matrice / NJ) ---------- */
+  .panel-tabs{
+    display:flex;
+    gap: 6px;
+    border-bottom: 1px solid #182236;
+    padding-bottom: 10px;
+  }
+  .panel-tab{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid #1c2740;
+    background: #0e1420;
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .panel-tab:hover{ color: var(--ink); }
+  .panel-tab.active{
+    background: linear-gradient(135deg, #163044, #0e2233);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .panel-view{ display:none; flex-direction:column; gap:12px; }
+  .panel-view.active{ display:flex; }
+
+  /* ---------- Switch Originale/Regolarizzato ---------- */
+  .source-switch{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .source-switch-label{
+    font-size: 11px;
+    color: var(--ink-dim);
+  }
+  .source-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid #1c2740;
+    background: #0e1420;
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .source-btn:hover:not(:disabled){ color: var(--ink); }
+  .source-btn.active{
+    background: rgba(182,255,60,0.12);
+    border-color: var(--acid);
+    color: var(--acid);
+  }
+  .source-btn:disabled{ opacity: 0.35; cursor: not-allowed; }
+
+  .regularize-note{
+    font-size: 11px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+    display:none;
+  }
+  .regularize-note.show{ display:block; }
+
+  /* highlight durante l'animazione di regolarizzazione (sull'albero principale, vista UBT) */
+  .node-capsule.regularize-active, .ubt-dot.regularize-active{
+    stroke: var(--mutation);
+    stroke-width: 3;
+    filter: drop-shadow(0 0 14px rgba(255,59,92,0.9));
+  }
+  .branch-path.regularize-active{
+    stroke: var(--mutation);
+    stroke-width: 3.4;
+    filter: drop-shadow(0 0 10px rgba(255,59,92,0.7));
+  }
+  .branch-path.regularize-new{
+    stroke: var(--acid);
+    stroke-width: 2.8;
+    filter: drop-shadow(0 0 8px rgba(182,255,60,0.7));
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <span class="eyebrow">Filogenetica in diretta</span>
+      <h1><span class="accent">OPTI</span>tree</h1>
+    </div>
+    <div class="stats">
+      <div class="stat-item"><b id="statGen">0</b>generazioni</div>
+      <div class="stat-item"><b id="statNodes">1</b>nodi totali</div>
+      <div class="stat-item"><b id="statLeaves">1</b>foglie attive</div>
+    </div>
+  </header>
+
+  <main>
+    <div id="treeArea">
+      <div id="viewport">
+        <svg id="canvas" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <div class="legend">
+        <div class="legend-row"><span class="swatch" style="background:var(--acid)"></span> radice T₀</div>
+        <div class="legend-row"><span class="swatch" style="background:var(--cyan)"></span> foglia attuale</div>
+        <div class="legend-row"><span class="swatch" style="background:var(--mutation)"></span> bit appena mutato</div>
+        <div class="legend-row"><span class="swatch" style="background:var(--amber)"></span> genitore selezionato ora</div>
+      </div>
+
+      <div class="controls">
+        <button class="btn primary" id="playBtn">
+          <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <span id="playLabel">Avvia</span>
+        </button>
+        <button class="btn" id="stepBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5v14l9-7zM17 5h2v14h-2z"/></svg>
+          Un passo
+        </button>
+        <button class="btn" id="resetBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V2L7 7l5 5V9a5 5 0 1 1-5 5H5a7 7 0 1 0 7-9z"/></svg>
+          Ricomincia
+        </button>
+        <button class="btn" id="ubtBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></svg>
+          <span id="ubtLabel">Proiezione UBT</span>
+        </button>
+
+        <select class="action-select" id="actionSelect">
+          <option value="" selected>Azioni…</option>
+          <option value="rebuild-matrix" id="rebuildMatrixOption">Ricostruisci filogenia (matrice distanze)</option>
+        </select>
+
+        <div class="speed-group">
+          <span>ogni</span>
+          <input type="range" id="speedRange" min="600" max="4000" step="100" value="2400">
+          <span id="speedLabel">2.4s</span>
+        </div>
+
+        <div class="seed-group">
+          <span style="font-size:11px; color:var(--ink-dim)">T₀</span>
+          <input type="text" id="seedInput" value="010110" maxlength="10" spellcheck="false">
+          <button class="btn" id="applySeedBtn">Applica</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="matrixPanel">
+      <div class="matrix-inner">
+        <div class="matrix-header">
+          <h2 class="matrix-title">Analisi filogenetica</h2>
+          <button class="matrix-close" id="matrixCloseBtn" title="Chiudi">✕</button>
+        </div>
+
+        <div class="panel-tabs">
+          <button class="panel-tab active" data-panel="matrix">Matrice distanze</button>
+          <button class="panel-tab" data-panel="nj">Albero NJ</button>
+        </div>
+
+        <div class="source-switch">
+          <span class="source-switch-label">Struttura:</span>
+          <button class="source-btn active" data-source="original">Originale</button>
+          <button class="source-btn" data-source="regularized" id="regularizedSourceBtn" disabled>Regolarizzato</button>
+          <button class="btn" id="regularizeBtn" style="margin-left:auto;">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10h-2a8 8 0 1 1-8-8V2z"/></svg>
+            Regolarizza
+          </button>
+        </div>
+        <div class="regularize-note" id="regularizeNote"></div>
+
+        <!-- Vista: Matrice -->
+        <div id="matrixView" class="panel-view active">
+          <div class="metric-tabs">
+            <button class="metric-tab active" data-metric="temporal">Temporale</button>
+            <button class="metric-tab" data-metric="hamming">Hamming</button>
+            <button class="metric-tab" data-metric="euclidean">Euclidea</button>
+            <button class="metric-tab" data-metric="radial">Radiale</button>
+          </div>
+
+          <div class="metric-desc" id="metricDesc"></div>
+
+          <div class="matrix-warning" id="matrixWarning">
+            Troppe foglie per l'aggiornamento automatico in diretta (limite 20). La matrice resta ferma all'ultimo stato calcolato — premi di nuovo "Ricostruisci" per un nuovo snapshot.
+          </div>
+
+          <div class="matrix-scroll" id="matrixScroll">
+            <div class="matrix-empty">Servono almeno 3 foglie per calcolare una matrice delle distanze.</div>
+          </div>
+
+          <div class="matrix-legend">
+            <span>min</span>
+            <span class="gradient-bar"></span>
+            <span>max</span>
+          </div>
+        </div>
+
+        <!-- Vista: Neighbor Joining -->
+        <div id="njView" class="panel-view">
+          <div id="njScroll" class="nj-scroll">
+            <div class="matrix-empty">L'albero NJ appare qui non appena la matrice è calcolata.</div>
+          </div>
+
+          <button class="btn primary" id="verifyBtn" style="width:100%; justify-content:center; margin-top:10px;">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
+            Verifica adiacenze
+          </button>
+          <div class="verify-result" id="verifyResult"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+
+(function(){
+  "use strict";
+
+  // ---------- Modello dati ----------
+  // Ogni nodo: { id, bits:[...], parentId, children:[], depth, mutatedIndex (-1 se non mutato),
+  //              weight (secondi, tempo evolutivo sull'arco dal genitore), bornAt (clock virtuale) }
+  let nodes = [];
+  let nextId = 0;
+  let seedString = "010110";
+
+  // Clock virtuale: avanza solo mentre l'animazione è "playing" (pausa esclusa dal calcolo dei pesi)
+  let pausedAccum = 0;      // ms totali trascorsi in pausa
+  let pauseStartedAt = null;
+  let clockRunning = false;
+
+  function clockNow(){
+    if (pauseStartedAt !== null){
+      return pauseStartedAt - pausedAccum;
+    }
+    return performance.now() - pausedAccum;
+  }
+
+  function clockStart(){
+    if (pauseStartedAt !== null){
+      pausedAccum += (performance.now() - pauseStartedAt);
+      pauseStartedAt = null;
+    }
+    clockRunning = true;
+  }
+
+  function clockStop(){
+    if (pauseStartedAt === null){
+      pauseStartedAt = performance.now();
+    }
+    clockRunning = false;
+  }
+
+  function makeRoot(seed){
+    nodes = [];
+    nextId = 0;
+    pausedAccum = 0;
+    pauseStartedAt = performance.now(); // il clock parte fermo finché non si preme Avvia
+    const bits = seed.split("").map(c => c === "1" ? 1 : 0);
+    nodes.push({
+      id: nextId++,
+      bits: bits.slice(),
+      parentId: null,
+      children: [],
+      depth: 0,
+      mutatedIndex: -1,   // radice: nessun bit "appena mutato"
+      weight: 0,
+      x: 0, y: 0, targetX: 0, targetY: 0,
+      bornAt: clockNow()
+    });
+  }
+
+  function mutateChild(parent, elapsedMs){
+    const bits = parent.bits.slice();
+    const idx = Math.floor(Math.random() * bits.length);
+    bits[idx] = bits[idx] === 1 ? 0 : 1;
+    const child = {
+      id: nextId++,
+      bits: bits,
+      parentId: parent.id,
+      children: [],
+      depth: parent.depth + 1,
+      mutatedIndex: idx,
+      weight: elapsedMs / 1000,
+      x: parent.x, y: parent.y, targetX: 0, targetY: 0,
+      bornAt: clockNow()
+    };
+    nodes.push(child);
+    parent.children.push(child.id);
+    return child;
+  }
+
+  function cloneChild(parent){
+    const child = {
+      id: nextId++,
+      bits: parent.bits.slice(),
+      parentId: parent.id,
+      children: [],
+      depth: parent.depth + 1,
+      mutatedIndex: -1,     // il clone non ha bit mutati: mai rosso
+      weight: 0,            // arco a costo zero: non si è evoluto
+      x: parent.x, y: parent.y, targetX: 0, targetY: 0,
+      bornAt: clockNow()
+    };
+    nodes.push(child);
+    parent.children.push(child.id);
+    return child;
+  }
+
+  function byId(id){ return nodes.find(n => n.id === id); }
+
+  // Un'iterazione evolutiva: sceglie un genitore uniforme tra TUTTI i nodi esistenti
+  // (anche quelli che hanno già biforcato in passato), e gli fa nascere due nuovi nodi:
+  // un CLONE identico (peso 0, non si è evoluto) e una MUTAZIONE (peso = tempo reale
+  // trascorso da quando il genitore stesso è nato, al netto delle pause).
+  function step(){
+    if (nodes.length === 0) return null;
+    const parentIdx = Math.floor(Math.random() * nodes.length);
+    const parent = nodes[parentIdx];
+    const elapsed = clockNow() - parent.bornAt;
+    const clone = cloneChild(parent);
+    const mutated = mutateChild(parent, elapsed);
+    return { parent, children: [clone, mutated] };
+  }
+
+  // ---------- Layout (albero verticale classico, rooted) ----------
+  const LEVEL_H = 130;
+  const LEAF_GAP = 148;
+  const NODE_W = 108;
+  const NODE_H = 32;
+
+  function computeLayoutRooted(){
+    // Assegna x tramite un ordinamento in-order ricorsivo delle foglie correnti,
+    // poi risale per posizionare i nodi interni al centro dei figli.
+    const root = nodes.find(n => n.parentId === null);
+    if (!root) return;
+
+    let cursor = 0;
+    function assign(node){
+      if (node.children.length === 0){
+        node.rootedX = cursor * LEAF_GAP;
+        cursor += 1;
+        node.rootedY = node.depth * LEVEL_H;
+        return node.rootedX;
+      }
+      const childXs = node.children.map(cid => assign(byId(cid)));
+      node.rootedX = childXs.reduce((a,b) => a+b, 0) / childXs.length;
+      node.rootedY = node.depth * LEVEL_H;
+      return node.rootedX;
+    }
+    assign(root);
+  }
+
+  // ---------- Layout (proiezione UBT, radiale, unrooted) ----------
+  // Le foglie attuali si distribuiscono equidistanti su un cerchio; i nodi interni
+  // (inclusa l'ex-radice, che perde ogni status speciale) si posizionano all'angolo medio
+  // dei propri figli, a un raggio proporzionale alla profondità nell'albero originale.
+  const UBT_RADIUS_STEP = 118;
+
+  function computeLayoutRadial(){
+    const root = nodes.find(n => n.parentId === null);
+    if (!root) return;
+
+    const leaves = nodes.filter(n => n.children.length === 0);
+    const leafCount = Math.max(1, leaves.length);
+    let leafCursor = 0;
+
+    function assignAngle(node){
+      if (node.children.length === 0){
+        node.radialAngle = (leafCursor / leafCount) * Math.PI * 2;
+        leafCursor += 1;
+        return node.radialAngle;
+      }
+      const childAngles = node.children.map(cid => assignAngle(byId(cid)));
+      // media circolare semplice (sufficiente: nessun ramo attraversa 0/2π con pochi nodi)
+      node.radialAngle = childAngles.reduce((a,b) => a+b, 0) / childAngles.length;
+      return node.radialAngle;
+    }
+    assignAngle(root);
+
+    nodes.forEach(n => {
+      const r = n.depth * UBT_RADIUS_STEP;
+      n.radialX = Math.cos(n.radialAngle - Math.PI/2) * r;
+      n.radialY = Math.sin(n.radialAngle - Math.PI/2) * r;
+    });
+  }
+
+  function lerp(a, b, t){ return a + (b - a) * t; }
+  function easeInOutCubic(t){ return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+
+  // ---------- Regolarizzazione (rooted arbitrary-degree -> unrooted binary tree) ----------
+  // Rappresentiamo il grafo come nodi { id, isLeaf, bits, originalLeafId, x, y } ed edges { a, b, weight }.
+  // Partiamo dalla struttura ad albero radicato "nodes" e la trattiamo come grafo non orientato
+  // (esattamente la stessa topologia della proiezione UBT, solo senza vincolo di radice speciale).
+
+  let regularizedGraph = null;   // { nodeMap, edges } — snapshot finale, immutabile finché non ri-regolarizzo
+  let regOpQueue = [];           // coda di operazioni da animare
+  let regAnimTimer = null;
+  let regInProgress = false;
+  let currentSource = 'original'; // 'original' | 'regularized'
+
+  function buildGraphFromCurrentTree(){
+    // Ricalcola le posizioni radiali correnti (serve solo per un layout iniziale ragionevole)
+    computeLayoutRooted();
+    computeLayoutRadial();
+
+    const nodeMap = new Map();
+    nodes.forEach(n => {
+      nodeMap.set(n.id, {
+        id: n.id,
+        isLeaf: n.children.length === 0,
+        bits: n.bits.slice(),
+        originalLeafId: n.children.length === 0 ? n.id : null,
+        x: n.radialX, y: n.radialY
+      });
+    });
+    const edges = [];
+    nodes.forEach(n => {
+      if (n.parentId === null) return;
+      edges.push({ a: n.parentId, b: n.id, weight: n.weight });
+    });
+    return { nodeMap, edges };
+  }
+
+  function degreeOf(graph, nodeId){
+    let d = 0;
+    graph.edges.forEach(e => { if (e.a === nodeId || e.b === nodeId) d++; });
+    return d;
+  }
+
+  function neighborsOf(graph, nodeId){
+    const res = [];
+    graph.edges.forEach(e => {
+      if (e.a === nodeId) res.push({ other: e.b, edge: e });
+      else if (e.b === nodeId) res.push({ other: e.a, edge: e });
+    });
+    return res;
+  }
+
+  // Costruisce la SEQUENZA di operazioni di regolarizzazione, senza eseguirle subito:
+  // ogni operazione è { type:'split', nodeId, movedNeighbors:[...], newNodeId } oppure
+  // { type:'contract', nodeId, edgeA, edgeB, newWeight }
+  // Le eseguiamo poi una alla volta su una COPIA del grafo, così l'anteprima combacia col risultato finale.
+  function planRegularization(graph){
+    // Lavoriamo su una copia profonda per pianificare, poi ri-eseguiamo le stesse operazioni
+    // in modo animato sulla copia "live" mostrata all'utente.
+    const ops = [];
+    let nextCloneId = Math.max(...[...graph.nodeMap.keys()]) + 1;
+
+    // Copia di lavoro solo per la pianificazione (id e archi, non serve altro)
+    let workNodes = new Set(graph.nodeMap.keys());
+    let workEdges = graph.edges.map(e => ({ a:e.a, b:e.b, weight:e.weight }));
+
+    function deg(id){
+      let d = 0;
+      workEdges.forEach(e => { if (e.a===id || e.b===id) d++; });
+      return d;
+    }
+    function neighbors(id){
+      const res = [];
+      workEdges.forEach((e,idx) => {
+        if (e.a===id) res.push({ other:e.b, idx });
+        else if (e.b===id) res.push({ other:e.a, idx });
+      });
+      return res;
+    }
+
+    // FASE 1: split di tutti i nodi con grado >= 4, uno alla volta, finché tutti sono <= 3
+    let safety = 0;
+    while (true){
+      const highDeg = [...workNodes].find(id => deg(id) >= 4);
+      if (highDeg === undefined || safety++ > 500) break;
+
+      const nbrs = neighbors(highDeg);
+      // stacchiamo 2 dei vicini dal nodo originale e li leghiamo a un nuovo nodo-clone,
+      // collegato all'originale con un arco a peso 0. Così il nodo originale perde 2 vicini
+      // e ne guadagna 1 (il clone): grado -1 netto.
+      const toMove = nbrs.slice(0, 2);
+      const cloneId = nextCloneId++;
+      workNodes.add(cloneId);
+
+      toMove.forEach(({idx}) => {
+        const e = workEdges[idx];
+        if (e.a === highDeg) e.a = cloneId; else e.b = cloneId;
+      });
+      workEdges.push({ a: highDeg, b: cloneId, weight: 0 });
+
+      ops.push({
+        type: 'split',
+        sourceNodeId: highDeg,
+        newNodeId: cloneId,
+        movedNeighborIds: toMove.map(t => t.other)
+      });
+    }
+
+    // FASE 2: contrazione di tutti i nodi con grado == 2 (tranne le foglie, che per definizione
+    // hanno grado 1 e non vengono mai toccate qui)
+    safety = 0;
+    while (true){
+      const deg2 = [...workNodes].find(id => {
+        const original = graph.nodeMap.get(id);
+        const isLeaf = original ? original.isLeaf : false; // i cloni non sono mai foglie
+        return !isLeaf && deg(id) === 2;
+      });
+      if (deg2 === undefined || safety++ > 500) break;
+
+      const nbrs = neighbors(deg2);
+      if (nbrs.length !== 2) break; // sicurezza
+      const [n1, n2] = nbrs;
+      const e1 = workEdges[n1.idx], e2 = workEdges[n2.idx];
+      const newWeight = e1.weight + e2.weight;
+
+      // rimuovi i due archi, aggiungine uno nuovo diretto tra i due vicini
+      const toRemove = [n1.idx, n2.idx].sort((a,b)=>b-a);
+      toRemove.forEach(idx => workEdges.splice(idx, 1));
+      workEdges.push({ a: n1.other, b: n2.other, weight: newWeight });
+      workNodes.delete(deg2);
+
+      ops.push({
+        type: 'contract',
+        removedNodeId: deg2,
+        neighborA: n1.other,
+        neighborB: n2.other,
+        newWeight
+      });
+    }
+
+    return ops;
+  }
+
+  // Esegue UNA operazione già pianificata su un grafo live (nodeMap/edges reali, con x/y)
+  function applyRegOp(graph, op){
+    if (op.type === 'split'){
+      const src = graph.nodeMap.get(op.sourceNodeId);
+      const clone = {
+        id: op.newNodeId, isLeaf: false, bits: [], originalLeafId: null,
+        x: src.x + (Math.random()-0.5)*40, y: src.y + (Math.random()-0.5)*40
+      };
+      graph.nodeMap.set(op.newNodeId, clone);
+      op.movedNeighborIds.forEach(otherId => {
+        const idx = graph.edges.findIndex(e =>
+          (e.a===op.sourceNodeId && e.b===otherId) || (e.b===op.sourceNodeId && e.a===otherId)
+        );
+        if (idx >= 0) graph.edges[idx] = { a: op.newNodeId, b: otherId, weight: graph.edges[idx].weight };
+      });
+      graph.edges.push({ a: op.sourceNodeId, b: op.newNodeId, weight: 0 });
+    } else if (op.type === 'contract'){
+      graph.edges = graph.edges.filter(e => {
+        const touchesRemoved = (e.a===op.removedNodeId || e.b===op.removedNodeId);
+        return !touchesRemoved;
+      });
+      graph.edges.push({ a: op.neighborA, b: op.neighborB, weight: op.newWeight });
+      graph.nodeMap.delete(op.removedNodeId);
+    }
+  }
+
+  function cloneGraph(graph){
+    const nodeMap = new Map();
+    graph.nodeMap.forEach((v,k) => nodeMap.set(k, {...v}));
+    return { nodeMap, edges: graph.edges.map(e => ({...e})) };
+  }
+
+  const regularizeBtn = document.getElementById('regularizeBtn');
+  const regularizedSourceBtn = document.getElementById('regularizedSourceBtn');
+  const regularizeNote = document.getElementById('regularizeNote');
+
+  let regHighlight = null; // { type, ...op } dell'operazione corrente, per il rendering evidenziato
+
+  function startRegularization(){
+    if (regInProgress) return;
+    const leaves = nodes.filter(n => n.children.length === 0);
+    if (leaves.length < 3) return;
+
+    const startGraph = buildGraphFromCurrentTree();
+    const ops = planRegularization(startGraph);
+
+    regInProgress = true;
+    regularizeBtn.disabled = true;
+    regularizedSourceBtn.disabled = true;
+    regularizeNote.classList.add('show');
+
+    // Passiamo automaticamente alla vista "originale" col grafo che si trasforma dal vivo:
+    // usiamo un grafo di lavoro live che parte identico all'attuale UBT e viene animato.
+    let liveGraph = cloneGraph(startGraph);
+    let opIndex = 0;
+
+    // forziamo la vista UBT per mostrare la trasformazione (se non già attiva)
+    if (!ubtMode){
+      ubtMode = true;
+      ubtBtn.classList.add('toggled');
+      ubtLabel.textContent = 'Torna a rooted';
+      viewState.userMoved = false;
+      animateMorph(1);
+    }
+
+    liveRegularizationGraph = liveGraph; // usata dal render() per disegnare la trasformazione al posto dell'albero originale
+
+    function step(){
+      if (opIndex >= ops.length){
+        regInProgress = false;
+        regularizeBtn.disabled = false;
+        regularizedSourceBtn.disabled = false;
+        regHighlight = null;
+        regularizedGraph = liveGraph;
+        liveRegularizationGraph = null;
+        regularizeNote.textContent = `Regolarizzazione completata: ${ops.length} operazioni applicate (grado massimo 3 raggiunto).`;
+        render();
+        return;
+      }
+      const op = ops[opIndex++];
+      applyRegOp(liveGraph, op);
+      regHighlight = op;
+      regularizeNote.textContent = op.type === 'split'
+        ? `Operazione ${opIndex}/${ops.length}: nodo di grado alto diviso — nuovo nodo clone inserito (arco peso 0).`
+        : `Operazione ${opIndex}/${ops.length}: nodo di grado 2 rimosso — archi contratti in uno solo (peso sommato).`;
+      render();
+      regAnimTimer = setTimeout(step, 500);
+    }
+    step();
+  }
+
+  let liveRegularizationGraph = null; // durante l'animazione, sostituisce la vista normale
+
+  regularizeBtn.addEventListener('click', startRegularization);
+
+  document.querySelectorAll('.source-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSource = btn.dataset.source;
+      highlightedLeafIds = [];
+      selectedDistanceValue = null;
+      rebuildMatrixSnapshot();
+    });
+  });
+
+  document.querySelectorAll('.panel-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.panel-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel-view').forEach(v => v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.panel === 'matrix' ? 'matrixView' : 'njView').classList.add('active');
+    });
+  });
+
+  // ---------- Rendering SVG ----------
+  const svg = document.getElementById('canvas');
+  const viewport = document.getElementById('viewport');
+  const NS = "http://www.w3.org/2000/svg";
+
+  let viewState = { scale: 1, tx: 0, ty: 60, dragging:false, lastX:0, lastY:0, userMoved:false };
+
+  function el(tag, attrs){
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  let flashNodeId = null;
+  let flashUntil = 0;
+
+  // Evidenziazione foglie selezionate dalla matrice delle distanze
+  let highlightedLeafIds = [];
+  let selectedDistanceValue = null;
+
+  // Stato della modalità UBT: 0 = albero rooted classico, 1 = proiezione radiale unrooted
+  let ubtMode = false;
+  let morphT = 0;            // 0..1, quanto siamo morfati verso la modalità UBT
+  let morphAnimHandle = null;
+
+  function animateMorph(targetT){
+    if (morphAnimHandle) cancelAnimationFrame(morphAnimHandle);
+    const startT = morphT;
+    const startTime = performance.now();
+    const duration = 1400;
+    function tick(now){
+      const raw = Math.min(1, (now - startTime) / duration);
+      const eased = easeInOutCubic(raw);
+      morphT = lerp(startT, targetT, eased);
+      render();
+      if (raw < 1){
+        morphAnimHandle = requestAnimationFrame(tick);
+      } else {
+        morphT = targetT;
+        morphAnimHandle = null;
+        render();
+      }
+    }
+    morphAnimHandle = requestAnimationFrame(tick);
+  }
+
+  // Disegna il grafo di regolarizzazione "live" durante l'animazione (o il risultato finale statico).
+  // Usa lo stesso stile visivo dell'UBT (foglie=capsule, interni=pallini) ma su una struttura a grafo generica.
+  function renderRegularizationGraph(graph, highlightOp){
+    const allNodes = [...graph.nodeMap.values()];
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    allNodes.forEach(n => {
+      minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x);
+      minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y);
+    });
+    if (!isFinite(minX)){ minX=0; maxX=0; minY=0; maxY=0; }
+
+    const contentW = (maxX - minX) + NODE_W + 80;
+    const contentH = (maxY - minY) + NODE_H + 140;
+
+    svg.innerHTML = "";
+    const g = el('g', { id:'world' });
+    svg.appendChild(g);
+
+    const offsetX = -minX + NODE_W/2 + 40;
+    const offsetY = -minY + 60;
+
+    const highlightNodeIds = new Set();
+    const highlightNewNodeIds = new Set();
+    if (highlightOp){
+      if (highlightOp.type === 'split'){
+        highlightNodeIds.add(highlightOp.sourceNodeId);
+        highlightNewNodeIds.add(highlightOp.newNodeId);
+      } else if (highlightOp.type === 'contract'){
+        highlightNodeIds.add(highlightOp.neighborA);
+        highlightNodeIds.add(highlightOp.neighborB);
+      }
+    }
+
+    // archi
+    graph.edges.forEach(e => {
+      const na = graph.nodeMap.get(e.a), nb = graph.nodeMap.get(e.b);
+      if (!na || !nb) return;
+      const x1 = na.x+offsetX, y1 = na.y+offsetY, x2 = nb.x+offsetX, y2 = nb.y+offsetY;
+      const midX=(x1+x2)/2, midY=(y1+y2)/2;
+      const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+      let cls = 'branch-path grown';
+      if (e.weight === 0) cls += ' clone-branch';
+      if (highlightOp && highlightOp.type==='split' &&
+          ((e.a===highlightOp.sourceNodeId && e.b===highlightOp.newNodeId) || (e.b===highlightOp.sourceNodeId && e.a===highlightOp.newNodeId))){
+        cls += ' regularize-new';
+      }
+      if (highlightOp && highlightOp.type==='contract' &&
+          ((e.a===highlightOp.neighborA && e.b===highlightOp.neighborB) || (e.b===highlightOp.neighborA && e.a===highlightOp.neighborB))){
+        cls += ' regularize-new';
+      }
+      const path = el('path', { d, class: cls });
+      g.appendChild(path);
+
+      const label = el('text', { x:midX, y:midY-5, 'text-anchor':'middle', class: e.weight===0 ? 'branch-weight clone-weight' : 'branch-weight' });
+      label.textContent = e.weight===0 ? '0s' : formatWeight(e.weight);
+      g.appendChild(label);
+    });
+
+    // nodi
+    allNodes.forEach(n => {
+      const cx = n.x+offsetX, cy = n.y+offsetY;
+      const isHi = highlightNodeIds.has(n.id) || highlightNewNodeIds.has(n.id);
+      if (n.isLeaf){
+        const group = el('g', { class:'node-group', transform:`translate(${cx-NODE_W/2}, ${cy-NODE_H/2})` });
+        let cap = 'node-capsule leaf';
+        if (isHi) cap += ' regularize-active';
+        const rect = el('rect', { width:NODE_W, height:NODE_H, rx:15, ry:15, class:cap });
+        group.appendChild(rect);
+        const tag = el('text', { x:NODE_W/2, y:-5, 'text-anchor':'middle', class:'node-tag leaf-tag' });
+        tag.textContent = `T${n.id} · foglia`;
+        group.appendChild(tag);
+        const bitsG = el('text', { x:NODE_W/2, y:NODE_H/2+1, 'text-anchor':'middle', class:'node-label' });
+        const charW=10, totalW=charW*n.bits.length, startX=NODE_W/2-totalW/2+charW/2;
+        n.bits.forEach((b,i) => {
+          const tspan = el('tspan', { x:startX+i*charW, class:'bit' });
+          tspan.textContent = b;
+          bitsG.appendChild(tspan);
+        });
+        group.appendChild(bitsG);
+        g.appendChild(group);
+      } else {
+        const dot = el('circle', { cx, cy, r:5.5, class: isHi ? 'ubt-dot regularize-active' : 'ubt-dot' });
+        g.appendChild(dot);
+      }
+    });
+
+    const vpRect = viewport.getBoundingClientRect();
+    const availW = Math.max(200, vpRect.width - 48);
+    const availH = Math.max(200, vpRect.height - 48);
+    if (!viewState.userMoved){
+      const scaleW = availW/contentW, scaleH = availH/contentH;
+      const scale = Math.max(0.15, Math.min(2.2, Math.min(scaleW, scaleH)));
+      viewState.scale = scale;
+      const ccx = (minX+maxX)/2+offsetX, ccy = (minY+maxY)/2+offsetY;
+      viewState.tx = vpRect.width/2 - ccx*scale;
+      viewState.ty = vpRect.height/2 - ccy*scale;
+    }
+    applyTransform();
+  }
+
+  function render(){
+    if (liveRegularizationGraph){
+      renderRegularizationGraph(liveRegularizationGraph, regHighlight);
+      return;
+    }
+    if (currentSource === 'regularized' && regularizedGraph){
+      renderRegularizationGraph(regularizedGraph, null);
+      return;
+    }
+    computeLayoutRooted();
+    computeLayoutRadial();
+
+    // Interpola per ogni nodo tra layout rooted e layout radiale secondo morphT
+    nodes.forEach(n => {
+      n.targetX = lerp(n.rootedX, n.radialX, morphT);
+      n.targetY = lerp(n.rootedY, n.radialY, morphT);
+    });
+
+    // dimensioni contenuto per centrare la viewBox
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    nodes.forEach(n => {
+      minX = Math.min(minX, n.targetX);
+      maxX = Math.max(maxX, n.targetX);
+      minY = Math.min(minY, n.targetY);
+      maxY = Math.max(maxY, n.targetY);
+    });
+    if (!isFinite(minX)) { minX = 0; maxX = 0; minY = 0; maxY = 0; }
+
+    const contentW = (maxX - minX) + NODE_W + 80;
+    const contentH = (maxY - minY) + NODE_H + 140;
+
+    svg.innerHTML = "";
+    const g = el('g', { id:'world' });
+    svg.appendChild(g);
+
+    const offsetX = -minX + NODE_W/2 + 40;
+    const offsetY = -minY + 60;
+
+    // fattore di "smaterializzazione" dei nodi interni: cresce con morphT
+    const interiorFade = morphT; // 0 = capsula piena, 1 = solo pallino
+
+    // rami — attacco semplificato al centro di ciascun nodo (capsule/pallini coprono il punto di giunzione)
+    nodes.forEach(n => {
+      if (n.parentId === null) return;
+      const p = byId(n.parentId);
+      const sx1 = p.targetX + offsetX, sy1 = p.targetY + offsetY;
+      const sx2 = n.targetX + offsetX, sy2 = n.targetY + offsetY;
+      const midX = (sx1 + sx2) / 2, midY = (sy1 + sy2) / 2;
+      const d = `M ${sx1} ${sy1} C ${sx1} ${midY}, ${sx2} ${midY}, ${sx2} ${sy2}`;
+      const isCloneBranch = (n.weight === 0);
+      const path = el('path', { d, class: isCloneBranch ? 'branch-path grown clone-branch' : 'branch-path grown' });
+      g.appendChild(path);
+
+      // etichetta del peso (tempo evolutivo), a metà del ramo — resta visibile anche in UBT
+      const label = el('text', {
+        x: midX, y: midY - 5,
+        'text-anchor':'middle',
+        class: isCloneBranch ? 'branch-weight clone-weight' : 'branch-weight'
+      });
+      label.textContent = isCloneBranch ? '0s' : formatWeight(n.weight);
+      g.appendChild(label);
+    });
+
+    // nodi
+    nodes.forEach(n => {
+      const cx = n.targetX + offsetX, cy = n.targetY + offsetY;
+      const isRoot = n.parentId === null;
+      const isLeaf = n.children.length === 0;
+      const isFlash = (n.id === flashNodeId && performance.now() < flashUntil);
+      // in proiezione UBT la radice non ha più alcuno status speciale
+      const showAsRoot = isRoot && !ubtMode && morphT < 0.5;
+
+      if (isLeaf){
+        // le foglie restano sempre capsule leggibili, anche in modalità UBT
+        const group = el('g', { class:'node-group', transform:`translate(${cx - NODE_W/2}, ${cy - NODE_H/2})` });
+
+        const isHighlighted = highlightedLeafIds.includes(n.id);
+        let capsuleClass = 'node-capsule leaf';
+        if (isFlash) capsuleClass += ' flash';
+        if (isHighlighted) capsuleClass += ' highlighted';
+
+        const rect = el('rect', { width: NODE_W, height: NODE_H, rx: 15, ry: 15, class: capsuleClass });
+        group.appendChild(rect);
+
+        const tag = el('text', { x: NODE_W/2, y: -5, 'text-anchor':'middle', class: 'node-tag leaf-tag' });
+        tag.textContent = isHighlighted && selectedDistanceValue !== null
+          ? `T${n.id} · foglia · d=${selectedDistanceValue}`
+          : `T${n.id} · foglia`;
+        group.appendChild(tag);
+
+        const bitsG = el('text', { x: NODE_W/2, y: NODE_H/2 + 1, 'text-anchor':'middle', class: 'node-label' });
+        const charW = 10;
+        const totalW = charW * n.bits.length;
+        const startX = NODE_W/2 - totalW/2 + charW/2;
+        n.bits.forEach((b, i) => {
+          const isMut = (i === n.mutatedIndex);
+          const tspan = el('tspan', { x: startX + i*charW, class: isMut ? 'bit mutated' : 'bit' });
+          tspan.textContent = b;
+          bitsG.appendChild(tspan);
+        });
+        group.appendChild(bitsG);
+        g.appendChild(group);
+      } else {
+        // nodi interni (radice inclusa): capsula che sfuma progressivamente in un pallino
+        const pointR = 5.5;
+        const capsuleOpacity = 1 - interiorFade;
+        const pointOpacity = interiorFade;
+
+        if (capsuleOpacity > 0.01){
+          const group = el('g', {
+            class:'node-group',
+            transform:`translate(${cx - NODE_W/2}, ${cy - NODE_H/2})`,
+            style:`opacity:${capsuleOpacity}`
+          });
+          let capsuleClass = 'node-capsule';
+          if (showAsRoot) capsuleClass += ' root';
+          if (isFlash) capsuleClass += ' flash';
+          const rect = el('rect', { width: NODE_W, height: NODE_H, rx: 15, ry: 15, class: capsuleClass });
+          group.appendChild(rect);
+
+          let tagText = showAsRoot ? 'T₀ · RADICE' : `T${n.id}`;
+          const tag = el('text', { x: NODE_W/2, y: -5, 'text-anchor':'middle', class: showAsRoot ? 'node-tag root-tag' : 'node-tag' });
+          tag.textContent = tagText;
+          group.appendChild(tag);
+
+          const bitsG = el('text', { x: NODE_W/2, y: NODE_H/2 + 1, 'text-anchor':'middle', class: 'node-label' });
+          const charW = 10;
+          const totalW = charW * n.bits.length;
+          const startX = NODE_W/2 - totalW/2 + charW/2;
+          n.bits.forEach((b, i) => {
+            const isMut = (i === n.mutatedIndex);
+            const tspan = el('tspan', { x: startX + i*charW, class: isMut ? 'bit mutated' : 'bit' });
+            tspan.textContent = b;
+            bitsG.appendChild(tspan);
+          });
+          group.appendChild(bitsG);
+          g.appendChild(group);
+        }
+
+        if (pointOpacity > 0.01){
+          const dot = el('circle', {
+            cx, cy, r: pointR,
+            class: isFlash ? 'ubt-dot flash-dot' : 'ubt-dot',
+            style:`opacity:${pointOpacity}`
+          });
+          g.appendChild(dot);
+        }
+      }
+    });
+
+    // fit-to-viewport: la scala usa TUTTO lo spazio disponibile (larghezza e altezza)
+    const vpRect = viewport.getBoundingClientRect();
+    const availW = Math.max(200, vpRect.width - 48);
+    const availH = Math.max(200, vpRect.height - 48);
+
+    if (!viewState.userMoved){
+      const scaleW = availW / contentW;
+      const scaleH = availH / contentH;
+      const scale = Math.max(0.15, Math.min(2.2, Math.min(scaleW, scaleH)));
+      viewState.scale = scale;
+
+      // centro orizzontale e verticale del contenuto (in coordinate "world", post-offset)
+      const contentCenterX = (minX + maxX)/2 + offsetX;
+      const contentCenterY = (minY + maxY)/2 + offsetY;
+      viewState.tx = vpRect.width/2 - contentCenterX * scale;
+      viewState.ty = vpRect.height/2 - contentCenterY * scale;
+    }
+
+    applyTransform();
+  }
+
+  function idPath(node){
+    // etichetta leggibile tipo 0,1,2... basata sull'id incrementale (ordine di nascita)
+    return node.id;
+  }
+
+  function formatWeight(seconds){
+    if (seconds < 10) return seconds.toFixed(1) + 's';
+    return Math.round(seconds) + 's';
+  }
+
+  function applyTransform(){
+    const g = document.getElementById('world');
+    if (!g) return;
+    g.setAttribute('transform', `translate(${viewState.tx}, ${viewState.ty}) scale(${viewState.scale})`);
+  }
+
+  // pan & zoom manuali
+  viewport.addEventListener('mousedown', e => {
+    viewState.dragging = true;
+    viewState.lastX = e.clientX; viewState.lastY = e.clientY;
+  });
+  window.addEventListener('mouseup', () => viewState.dragging = false);
+  window.addEventListener('mousemove', e => {
+    if (!viewState.dragging) return;
+    viewState.userMoved = true;
+    viewState.tx += (e.clientX - viewState.lastX);
+    viewState.ty += (e.clientY - viewState.lastY);
+    viewState.lastX = e.clientX; viewState.lastY = e.clientY;
+    applyTransform();
+  });
+  viewport.addEventListener('wheel', e => {
+    e.preventDefault();
+    viewState.userMoved = true;
+    const delta = -e.deltaY * 0.0012;
+    const newScale = Math.max(0.15, Math.min(2.5, viewState.scale * (1+delta)));
+    const rect = viewport.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const wx = (mx - viewState.tx)/viewState.scale;
+    const wy = (my - viewState.ty)/viewState.scale;
+    viewState.scale = newScale;
+    viewState.tx = mx - wx*newScale;
+    viewState.ty = my - wy*newScale;
+    applyTransform();
+  }, { passive:false });
+
+  let touchStart = null;
+  viewport.addEventListener('touchstart', e => {
+    if (e.touches.length === 1){
+      touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, tx: viewState.tx, ty: viewState.ty };
+    }
+  });
+  viewport.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && touchStart){
+      viewState.userMoved = true;
+      viewState.tx = touchStart.tx + (e.touches[0].clientX - touchStart.x);
+      viewState.ty = touchStart.ty + (e.touches[0].clientY - touchStart.y);
+      applyTransform();
+    }
+  }, { passive:true });
+
+  // ---------- Matrice delle distanze ----------
+  const MAX_LIVE_LEAVES = 20;
+  let matrixOpen = false;
+  let currentMetric = 'temporal';
+  let lastMatrixSnapshot = null; // { leafIds, matrix, metric } — congelato oltre il limite live
+
+  const metricDescriptions = {
+    temporal: "Somma dei pesi (tempo evolutivo reale) lungo il cammino sull'albero tra due foglie, calcolata con Dijkstra sul grafo pesato.",
+    hamming: "Numero di posizioni in cui le stringhe binarie di due foglie differiscono (distanza di Hamming).",
+    euclidean: "Distanza euclidea tra le coordinate xy delle due foglie nella proiezione radiale UBT.",
+    radial: "Angolo (in gradi, 0–180°) al vertice del baricentro delle foglie, tra i raggi verso le due foglie i e j."
+  };
+
+  // Costruisce la lista di adiacenza pesata (grafo non orientato) dall'albero corrente
+  // Adiacenza generica: dalla struttura ORIGINALE (albero radicato "nodes") o dal grafo REGOLARIZZATO,
+  // a seconda di currentSource. Entrambe espongono la stessa interfaccia: { adjMap, leafObjs }
+  function getActiveStructure(){
+    if (currentSource === 'regularized' && regularizedGraph){
+      const adjMap = new Map();
+      regularizedGraph.nodeMap.forEach((n, id) => adjMap.set(id, []));
+      regularizedGraph.edges.forEach(e => {
+        adjMap.get(e.a).push({ to: e.b, w: e.weight });
+        adjMap.get(e.b).push({ to: e.a, w: e.weight });
+      });
+      const leafObjs = [...regularizedGraph.nodeMap.values()].filter(n => n.isLeaf);
+      const allIds = [...regularizedGraph.nodeMap.keys()];
+      return { adjMap, leafObjs, allIds, isRegularized: true };
+    }
+    // originale: usiamo l'albero radicato "nodes" trattato come grafo non orientato
+    const adjMap = new Map();
+    nodes.forEach(n => adjMap.set(n.id, []));
+    nodes.forEach(n => {
+      if (n.parentId === null) return;
+      adjMap.get(n.id).push({ to: n.parentId, w: n.weight });
+      adjMap.get(n.parentId).push({ to: n.id, w: n.weight });
+    });
+    const leafObjs = nodes.filter(n => n.children.length === 0);
+    const allIds = nodes.map(n => n.id);
+    return { adjMap, leafObjs, allIds, isRegularized: false };
+  }
+
+  // Dijkstra generico da una sorgente su una mappa di adiacenza qualsiasi
+  function dijkstraGeneric(sourceId, adjMap, allIds){
+    const dist = new Map();
+    allIds.forEach(id => dist.set(id, Infinity));
+    dist.set(sourceId, 0);
+    const visited = new Set();
+    const pq = [[0, sourceId]];
+    while (pq.length){
+      pq.sort((a,b) => a[0]-b[0]);
+      const [d, u] = pq.shift();
+      if (visited.has(u)) continue;
+      visited.add(u);
+      (adjMap.get(u) || []).forEach(edge => {
+        const nd = d + edge.w;
+        if (nd < dist.get(edge.to)){ dist.set(edge.to, nd); pq.push([nd, edge.to]); }
+      });
+    }
+    return dist;
+  }
+
+  function computeTemporalMatrix(leaves, struct){
+    const n = leaves.length;
+    const M = Array.from({length:n}, () => new Array(n).fill(0));
+    for (let i=0;i<n;i++){
+      const dist = dijkstraGeneric(leaves[i].id, struct.adjMap, struct.allIds);
+      for (let j=0;j<n;j++) M[i][j] = dist.get(leaves[j].id);
+    }
+    return M;
+  }
+
+  function computeHammingMatrix(leaves){
+    const n = leaves.length;
+    const M = Array.from({length:n}, () => new Array(n).fill(0));
+    for (let i=0;i<n;i++){
+      for (let j=0;j<n;j++){
+        let d = 0;
+        const bi = leaves[i].bits, bj = leaves[j].bits;
+        for (let k=0;k<bi.length;k++) if (bi[k] !== bj[k]) d++;
+        M[i][j] = d;
+      }
+    }
+    return M;
+  }
+
+  function computeEuclideanMatrix(leaves){
+    const n = leaves.length;
+    const M = Array.from({length:n}, () => new Array(n).fill(0));
+    for (let i=0;i<n;i++){
+      for (let j=0;j<n;j++){
+        const dx = getX(leaves[i]) - getX(leaves[j]);
+        const dy = getY(leaves[i]) - getY(leaves[j]);
+        M[i][j] = Math.sqrt(dx*dx + dy*dy);
+      }
+    }
+    return M;
+  }
+
+  function getX(leafObj){ return leafObj.radialX !== undefined ? leafObj.radialX : leafObj.x; }
+  function getY(leafObj){ return leafObj.radialY !== undefined ? leafObj.radialY : leafObj.y; }
+
+  function computeRadialMatrix(leaves){
+    // Baricentro delle foglie attuali come origine O
+    const n = leaves.length;
+    let ox = 0, oy = 0;
+    leaves.forEach(l => { ox += getX(l); oy += getY(l); });
+    ox /= Math.max(1,n); oy /= Math.max(1,n);
+
+    const angles = leaves.map(l => Math.atan2(getY(l) - oy, getX(l) - ox));
+    const M = Array.from({length:n}, () => new Array(n).fill(0));
+    for (let i=0;i<n;i++){
+      for (let j=0;j<n;j++){
+        let diff = Math.abs(angles[i] - angles[j]);
+        if (diff > Math.PI) diff = 2*Math.PI - diff; // range corto [0, π]
+        M[i][j] = diff * 180 / Math.PI; // in gradi, più leggibile
+      }
+    }
+    return M;
+  }
+
+  function computeMatrix(metric, leaves, struct){
+    if (!struct.isRegularized){
+      // Assicura che le coordinate radiali siano aggiornate per euclidean/radial sull'originale
+      computeLayoutRooted();
+      computeLayoutRadial();
+    }
+    if (metric === 'temporal') return computeTemporalMatrix(leaves, struct);
+    if (metric === 'hamming') return computeHammingMatrix(leaves);
+    if (metric === 'euclidean') return computeEuclideanMatrix(leaves);
+    if (metric === 'radial') return computeRadialMatrix(leaves);
+    return null;
+  }
+
+  function formatMatrixValue(metric, v){
+    if (metric === 'hamming') return String(Math.round(v));
+    if (metric === 'radial') return v.toFixed(1) + '°';
+    return v.toFixed(2);
+  }
+
+  function refreshMatrixIfOpen(){
+    if (!matrixOpen) return;
+    if (currentSource === 'regularized') return; // lo snapshot regolarizzato è congelato, non si auto-aggiorna
+    const struct = getActiveStructure();
+    const leaves = struct.leafObjs;
+    if (leaves.length < 3){
+      lastMatrixSnapshot = null;
+      renderMatrixPanel();
+      rebuildNJFromSnapshot();
+      return;
+    }
+    if (leaves.length > MAX_LIVE_LEAVES && lastMatrixSnapshot){
+      // troppe foglie: non ricalcolo automaticamente, resto sull'ultimo snapshot
+      renderMatrixPanel(true);
+      return;
+    }
+    const M = computeMatrix(currentMetric, leaves, struct);
+    lastMatrixSnapshot = { leafIds: leaves.map(l => l.id), matrix: M, metric: currentMetric, leaves, isRegularized: false };
+    renderMatrixPanel();
+    rebuildNJFromSnapshot();
+  }
+
+  function rebuildMatrixSnapshot(){
+    const struct = getActiveStructure();
+    const leaves = struct.leafObjs;
+    if (leaves.length < 3){
+      lastMatrixSnapshot = null;
+      renderMatrixPanel();
+      rebuildNJFromSnapshot();
+      return;
+    }
+    const M = computeMatrix(currentMetric, leaves, struct);
+    lastMatrixSnapshot = { leafIds: leaves.map(l => l.id), matrix: M, metric: currentMetric, leaves, isRegularized: struct.isRegularized };
+    highlightedLeafIds = [];
+    selectedDistanceValue = null;
+    renderMatrixPanel();
+    rebuildNJFromSnapshot();
+    render();
+  }
+
+  const matrixScroll = document.getElementById('matrixScroll');
+  const matrixWarning = document.getElementById('matrixWarning');
+  const metricDesc = document.getElementById('metricDesc');
+
+  function colorForValue(v, min, max){
+    const t = (max > min) ? (v - min) / (max - min) : 0;
+    // gradiente: blu scuro -> ciano -> acido -> rosso mutazione
+    const stops = [
+      [22, 50, 74],    // #16324a
+      [79, 217, 255],  // cyan
+      [182, 255, 60],  // acid
+      [255, 59, 92]    // mutation
+    ];
+    const scaled = t * (stops.length - 1);
+    const idx = Math.min(stops.length - 2, Math.floor(scaled));
+    const localT = scaled - idx;
+    const c0 = stops[idx], c1 = stops[idx+1];
+    const r = Math.round(c0[0] + (c1[0]-c0[0])*localT);
+    const g = Math.round(c0[1] + (c1[1]-c0[1])*localT);
+    const b = Math.round(c0[2] + (c1[2]-c0[2])*localT);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function renderMatrixPanel(showWarning){
+    matrixWarning.classList.toggle('show', !!showWarning);
+
+    if (!lastMatrixSnapshot){
+      matrixScroll.innerHTML = '<div class="matrix-empty">Servono almeno 3 foglie per calcolare una matrice delle distanze.</div>';
+      return;
+    }
+
+    const { leaves, matrix, metric } = lastMatrixSnapshot;
+    metricDesc.textContent = metricDescriptions[metric];
+
+    let flat = [];
+    for (let i=0;i<matrix.length;i++) for (let j=0;j<matrix.length;j++) if (i!==j) flat.push(matrix[i][j]);
+    const min = flat.length ? Math.min(...flat) : 0;
+    const max = flat.length ? Math.max(...flat) : 1;
+
+    const table = document.createElement('table');
+    table.className = 'dist-matrix';
+
+    const headRow = document.createElement('tr');
+    headRow.appendChild(el2('th', 'corner', ''));
+    leaves.forEach(l => headRow.appendChild(el2('th', '', `T${l.id}`)));
+    table.appendChild(headRow);
+
+    leaves.forEach((li, i) => {
+      const row = document.createElement('tr');
+      row.appendChild(el2('th', '', `T${li.id}`));
+      leaves.forEach((lj, j) => {
+        const td = document.createElement('td');
+        const v = matrix[i][j];
+        if (i === j){
+          td.className = 'diag-cell';
+          td.textContent = formatMatrixValue(metric, v);
+        } else {
+          td.style.background = colorForValue(v, min, max);
+          td.textContent = formatMatrixValue(metric, v);
+          const isSel = highlightedLeafIds.includes(li.id) && highlightedLeafIds.includes(lj.id) && li.id !== lj.id;
+          if (isSel) td.classList.add('selected-cell');
+          td.addEventListener('click', () => {
+            highlightedLeafIds = [li.id, lj.id];
+            selectedDistanceValue = formatMatrixValue(metric, v);
+            renderMatrixPanel(showWarning);
+            render();
+          });
+        }
+        row.appendChild(td);
+      });
+      table.appendChild(row);
+    });
+
+    matrixScroll.innerHTML = '';
+    matrixScroll.appendChild(table);
+  }
+
+  function el2(tag, cls, text){
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    e.textContent = text;
+    return e;
+  }
+
+  // ---------- Neighbor Joining ----------
+  // Standard NJ: a partire da una matrice di distanze simmetrica su un set di "taxa" (le foglie),
+  // produce un albero (non radicato) con nodi interni astratti e lunghezze di ramo stimate.
+  // Rappresentazione risultante: lista di nodi { id, label, isLeaf, children:[{node, weight}] }
+  let lastNJTree = null;      // { root, leafOriginalIds: Map(njNodeId -> id foglia originale) }
+  let lastVerifyResult = null;
+
+  function buildNeighborJoiningTree(leafObjs, matrix){
+    const n = leafObjs.length;
+    // cluster attivo: ognuno ha un id NJ proprio, un set di "membri" (per il disegno),
+    // e sappiamo a quale foglia originale corrisponde se è ancora una foglia vera.
+    let activeIds = leafObjs.map((l, i) => i); // indici locali 0..n-1
+    let dist = matrix.map(row => row.slice());
+    let njNextId = n; // i nuovi nodi interni NJ hanno id >= n
+    const njNodes = {}; // njId -> { id, label, isLeaf, originalLeafId, edges: [{to, weight}] }
+
+    leafObjs.forEach((l, i) => {
+      njNodes[i] = { id: i, label: `T${l.id}`, isLeaf: true, originalLeafId: l.id, edges: [] };
+    });
+
+    // mappa da indice-locale-attivo -> njId corrente
+    let idxToNJ = leafObjs.map((_, i) => i);
+    let liveDist = dist; // matrice indicizzata per indice-locale corrente (si restringe ad ogni join)
+
+    while (idxToNJ.length > 2){
+      const m = idxToNJ.length;
+      const r = new Array(m).fill(0);
+      for (let i=0;i<m;i++){
+        let s = 0;
+        for (let j=0;j<m;j++) if (j!==i) s += liveDist[i][j];
+        r[i] = s;
+      }
+      // Q-matrix: trova la coppia (i,j) che minimizza Q
+      let best = { i:-1, j:-1, q:Infinity };
+      for (let i=0;i<m;i++){
+        for (let j=i+1;j<m;j++){
+          const q = (m-2)*liveDist[i][j] - r[i] - r[j];
+          if (q < best.q){ best = { i, j, q }; }
+        }
+      }
+      const { i, j } = best;
+      const dij = liveDist[i][j];
+      // lunghezze di ramo dal nuovo nodo u verso i e verso j
+      let wi = 0.5*dij + (m>2 ? (r[i]-r[j])/(2*(m-2)) : 0);
+      let wj = dij - wi;
+
+      const newId = njNextId++;
+      njNodes[newId] = { id: newId, label: '', isLeaf: false, edges: [] };
+      const niId = idxToNJ[i], njId2 = idxToNJ[j];
+      njNodes[newId].edges.push({ to: niId, weight: Math.max(0, wi) });
+      njNodes[niId].edges.push({ to: newId, weight: Math.max(0, wi) });
+      njNodes[newId].edges.push({ to: njId2, weight: Math.max(0, wj) });
+      njNodes[njId2].edges.push({ to: newId, weight: Math.max(0, wj) });
+
+      // nuova matrice ridotta: rimuove i,j, aggiunge u con distanza media formula NJ standard
+      const newDist = [];
+      const newIdxToNJ = [];
+      for (let k=0;k<m;k++){
+        if (k===i || k===j) continue;
+        newIdxToNJ.push(idxToNJ[k]);
+      }
+      newIdxToNJ.push(newId);
+
+      for (let a=0;a<newIdxToNJ.length;a++){
+        newDist.push(new Array(newIdxToNJ.length).fill(0));
+      }
+      // riempi sotto-matrice tra i "vecchi sopravvissuti"
+      const survivorsOldIdx = [];
+      for (let k=0;k<m;k++) if (k!==i && k!==j) survivorsOldIdx.push(k);
+
+      for (let a=0;a<survivorsOldIdx.length;a++){
+        for (let b=0;b<survivorsOldIdx.length;b++){
+          newDist[a][b] = liveDist[survivorsOldIdx[a]][survivorsOldIdx[b]];
+        }
+      }
+      // distanza dal nuovo nodo u ad ogni sopravvissuto k: (d_ik + d_jk - d_ij)/2
+      const uPos = newIdxToNJ.length - 1;
+      for (let a=0;a<survivorsOldIdx.length;a++){
+        const k = survivorsOldIdx[a];
+        const duk = 0.5*(liveDist[i][k] + liveDist[j][k] - dij);
+        newDist[a][uPos] = Math.max(0, duk);
+        newDist[uPos][a] = Math.max(0, duk);
+      }
+      newDist[uPos][uPos] = 0;
+
+      liveDist = newDist;
+      idxToNJ = newIdxToNJ;
+    }
+
+    // ultimi due nodi rimasti: collegali con un ramo finale (chiusura dell'albero unrooted)
+    if (idxToNJ.length === 2){
+      const a = idxToNJ[0], b = idxToNJ[1];
+      const w = Math.max(0, liveDist[0][1]);
+      njNodes[a].edges.push({ to: b, weight: w });
+      njNodes[b].edges.push({ to: a, weight: w });
+    }
+
+    // Per disegnare, serve una radice arbitraria: scegliamo un nodo interno se esiste, altrimenti una foglia
+    const anyInternal = Object.values(njNodes).find(nd => !nd.isLeaf);
+    const rootId = anyInternal ? anyInternal.id : idxToNJ[0];
+
+    // Costruisci struttura ad albero radicato (per il disegno) facendo una visita dal rootId,
+    // trasformando gli edges non orientati in children orientati verso l'esterno
+    function buildRootedView(startId){
+      const visited = new Set([startId]);
+      function visit(id){
+        const nd = njNodes[id];
+        const children = [];
+        nd.edges.forEach(e => {
+          if (!visited.has(e.to)){
+            visited.add(e.to);
+            const childView = visit(e.to);
+            children.push({ node: childView, weight: e.weight });
+          }
+        });
+        return { id: nd.id, label: nd.label, isLeaf: nd.isLeaf, originalLeafId: nd.originalLeafId, children };
+      }
+      return visit(startId);
+    }
+
+    const rootedTree = buildRootedView(rootId);
+    return rootedTree;
+  }
+
+  function computeSiblingPairsFromNJ(rootedTree){
+    // Per ogni nodo interno con esattamente 2 figli-foglia diretti, quella è una coppia "fratelli".
+    // Per nodi interni con più struttura, scendiamo ricorsivamente.
+    const pairs = new Set();
+    function key(a,b){ return a<b ? `${a}|${b}` : `${b}|${a}`; }
+    function visit(node){
+      const leafChildren = node.children.filter(c => c.node.isLeaf).map(c => c.node.originalLeafId);
+      for (let i=0;i<leafChildren.length;i++){
+        for (let j=i+1;j<leafChildren.length;j++){
+          pairs.add(key(leafChildren[i], leafChildren[j]));
+        }
+      }
+      node.children.forEach(c => visit(c.node));
+    }
+    visit(rootedTree);
+    return pairs;
+  }
+
+  function computeSiblingPairsFromStructure(leafIds, struct){
+    // Due foglie sono "vicine dirette" se condividono lo stesso nodo interno immediato
+    // (cioè: seguendo l'unico arco che parte da ciascuna foglia, si arriva allo stesso nodo).
+    const pairs = new Set();
+    function key(a,b){ return a<b ? `${a}|${b}` : `${b}|${a}`; }
+    const leafSet = new Set(leafIds);
+    const byImmediateNeighbor = new Map();
+    leafIds.forEach(id => {
+      const edges = struct.adjMap.get(id) || [];
+      if (edges.length !== 1) return; // una foglia ha sempre grado 1 per definizione
+      const parentLike = edges[0].to;
+      if (!byImmediateNeighbor.has(parentLike)) byImmediateNeighbor.set(parentLike, []);
+      byImmediateNeighbor.get(parentLike).push(id);
+    });
+    byImmediateNeighbor.forEach(group => {
+      for (let i=0;i<group.length;i++){
+        for (let j=i+1;j<group.length;j++){
+          pairs.add(key(group[i], group[j]));
+        }
+      }
+    });
+    return pairs;
+  }
+
+  const njScroll = document.getElementById('njScroll');
+  const verifyBtn = document.getElementById('verifyBtn');
+  const verifyResult = document.getElementById('verifyResult');
+
+  // ---------- Pan & zoom per l'albero NJ (stesse interazioni dell'UBT principale) ----------
+  let njViewState = { scale: 1, tx: 0, ty: 0, dragging:false, lastX:0, lastY:0, userMoved:false };
+  let njContentBounds = { minX:0, maxX:0, minY:0, maxY:0, offX:0, offY:0 };
+
+  function layoutNJTree(root){
+    // layout verticale semplice, simile a computeLayoutRooted ma su struttura NJ locale
+    let cursor = 0;
+    const LEVEL = 70, GAP = 90;
+    function assign(node, depth){
+      node._depth = depth;
+      if (node.children.length === 0){
+        node._x = cursor * GAP; cursor += 1;
+        node._y = depth * LEVEL;
+        return node._x;
+      }
+      const xs = node.children.map(c => assign(c.node, depth+1));
+      node._x = xs.reduce((a,b)=>a+b,0)/xs.length;
+      node._y = depth * LEVEL;
+      return node._x;
+    }
+    assign(root, 0);
+  }
+
+  function njApplyTransform(){
+    const g = document.getElementById('njWorld');
+    if (!g) return;
+    g.setAttribute('transform', `translate(${njViewState.tx}, ${njViewState.ty}) scale(${njViewState.scale})`);
+  }
+
+  function renderNJTree(){
+    if (!lastNJTree){
+      njScroll.innerHTML = '';
+      njScroll.appendChild(el2('div', 'matrix-empty', "L'albero NJ appare qui non appena la matrice è calcolata."));
+      return;
+    }
+    layoutNJTree(lastNJTree);
+
+    let minX=Infinity, maxX=-Infinity, maxY=0;
+    (function scan(node){
+      minX = Math.min(minX, node._x); maxX = Math.max(maxX, node._x);
+      maxY = Math.max(maxY, node._y);
+      node.children.forEach(c => scan(c.node));
+    })(lastNJTree);
+    if (!isFinite(minX)){ minX=0; maxX=0; }
+
+    const offX = -minX + 45, offY = 26;
+    njContentBounds = { minX, maxX, minY:0, maxY, offX, offY };
+    njLayoutOffset = { x: offX, y: offY };
+
+    const contentW = (maxX-minX) + 90;
+    const contentH = maxY + 60;
+
+    // Ricostruiamo l'SVG solo se non esiste ancora (altrimenti aggiorniamo i figli, mantenendo pan/zoom fluido)
+    let svgNJ = njScroll.querySelector('svg#njCanvas');
+    if (!svgNJ){
+      njScroll.innerHTML = '';
+      svgNJ = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svgNJ.setAttribute('id', 'njCanvas');
+      svgNJ.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      njScroll.appendChild(svgNJ);
+      attachNJPanZoom(svgNJ);
+    }
+    svgNJ.innerHTML = '';
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute('id', 'njWorld');
+    svgNJ.appendChild(g);
+
+    const NS = "http://www.w3.org/2000/svg";
+    function mk(tag, attrs){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+
+    (function drawEdges(node){
+      node.children.forEach(c => {
+        const child = c.node;
+        const x1 = node._x+offX, y1 = node._y+offY;
+        const x2 = child._x+offX, y2 = child._y+offY;
+        const midY = (y1+y2)/2;
+        const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+        let cls = 'nj-edge';
+        if (lastVerifyResult && child.isLeaf){
+          const status = lastVerifyResult.leafStatus.get(child.originalLeafId);
+          if (status === true) cls += ' edge-correct';
+          else if (status === false) cls += ' edge-wrong';
+        }
+        const path = mk('path', { d, class: cls });
+        g.appendChild(path);
+
+        const label = mk('text', { x:(x1+x2)/2, y: midY-4, 'text-anchor':'middle', class:'nj-weight-label' });
+        label.textContent = c.weight.toFixed(2);
+        g.appendChild(label);
+
+        drawEdges(child);
+      });
+    })(lastNJTree);
+
+    (function drawNodes(node){
+      const cx = node._x+offX, cy = node._y+offY;
+      if (node.isLeaf){
+        const isDragging = (njDragState && njDragState.nodeRef === node);
+        const isTarget = (njDragState && njDragState.hoverTarget === node);
+        const dot = mk('circle', {
+          cx, cy, r:9, class: isDragging ? 'nj-node-dot nj-dragging' : 'nj-node-dot',
+          'data-leaf-node': '1'
+        });
+        dot.style.cursor = 'grab';
+        g.appendChild(dot);
+
+        if (isTarget){
+          const ring = mk('circle', { cx, cy, r:16, class:'nj-target-highlight' });
+          g.appendChild(ring);
+        }
+
+        const lbl = mk('text', { x:cx, y:cy+18, 'text-anchor':'middle', class:'nj-leaf-label' });
+        lbl.textContent = node.label;
+        g.appendChild(lbl);
+
+        dot.addEventListener('pointerdown', (ev) => startNJDrag(ev, node, svgNJ));
+      } else {
+        const dot = mk('circle', { cx, cy, r:4, class:'nj-node-dot internal' });
+        g.appendChild(dot);
+      }
+      node.children.forEach(c => drawNodes(c.node));
+    })(lastNJTree);
+
+    // "fantasma" del nodo trascinato: segue il puntatore, nessuna linea
+    if (njDragState && njDragState.active){
+      const gx = njDragState.curX, gy = njDragState.curY;
+      const ghost = mk('circle', { cx: gx, cy: gy, r:9, class:'nj-ghost' });
+      g.appendChild(ghost);
+      const ghostLbl = mk('text', { x:gx, y:gy+18, 'text-anchor':'middle', class:'nj-ghost-label' });
+      ghostLbl.textContent = njDragState.nodeRef.label;
+      g.appendChild(ghostLbl);
+    }
+
+    // fit-to-viewport iniziale (solo se l'utente non ha ancora interagito con pan/zoom)
+    const vpRect = njScroll.getBoundingClientRect();
+    const availW = Math.max(150, vpRect.width - 24);
+    const availH = Math.max(150, vpRect.height - 24);
+    svgNJ.setAttribute('viewBox', `0 0 ${vpRect.width || 400} ${vpRect.height || 320}`);
+
+    if (!njViewState.userMoved){
+      const scaleW = availW / contentW, scaleH = availH / contentH;
+      const scale = Math.max(0.3, Math.min(2.5, Math.min(scaleW, scaleH)));
+      njViewState.scale = scale;
+      const ccx = (minX+maxX)/2 + offX, ccy = maxY/2 + offY;
+      njViewState.tx = vpRect.width/2 - ccx*scale;
+      njViewState.ty = vpRect.height/2 - ccy*scale;
+    }
+    njApplyTransform();
+  }
+
+  function attachNJPanZoom(svgNJ){
+    njScroll.addEventListener('pointerdown', e => {
+      if (njDragState) return; // non fare pan mentre si trascina una foglia
+      if (e.target && e.target.getAttribute && e.target.getAttribute('data-leaf-node')) return; // il drag della foglia gestisce da sé
+      njViewState.dragging = true;
+      njViewState.lastX = e.clientX; njViewState.lastY = e.clientY;
+    });
+    window.addEventListener('pointerup', () => njViewState.dragging = false);
+    window.addEventListener('pointermove', e => {
+      if (!njViewState.dragging) return;
+      njViewState.userMoved = true;
+      njViewState.tx += (e.clientX - njViewState.lastX);
+      njViewState.ty += (e.clientY - njViewState.lastY);
+      njViewState.lastX = e.clientX; njViewState.lastY = e.clientY;
+      njApplyTransform();
+    });
+    njScroll.addEventListener('wheel', e => {
+      e.preventDefault();
+      njViewState.userMoved = true;
+      const delta = -e.deltaY * 0.0012;
+      const newScale = Math.max(0.15, Math.min(3.5, njViewState.scale * (1+delta)));
+      const rect = njScroll.getBoundingClientRect();
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      const wx = (mx - njViewState.tx)/njViewState.scale;
+      const wy = (my - njViewState.ty)/njViewState.scale;
+      njViewState.scale = newScale;
+      njViewState.tx = mx - wx*newScale;
+      njViewState.ty = my - wy*newScale;
+      njApplyTransform();
+    }, { passive:false });
+
+    let njPinchStart = null;
+    njScroll.addEventListener('touchstart', e => {
+      if (njDragState) return;
+      if (e.touches.length === 2){
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        njPinchStart = { dist: Math.sqrt(dx*dx+dy*dy), scale: njViewState.scale };
+      }
+    }, { passive:true });
+    njScroll.addEventListener('touchmove', e => {
+      if (njDragState) return;
+      if (e.touches.length === 2 && njPinchStart){
+        njViewState.userMoved = true;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        njViewState.scale = Math.max(0.15, Math.min(3.5, njPinchStart.scale * (dist/njPinchStart.dist)));
+        njApplyTransform();
+      }
+    }, { passive:true });
+  }
+
+  // ---------- Drag & drop per scambiare due foglie sull'albero NJ ----------
+  let njDragState = null;
+  let njLayoutOffset = { x: 0, y: 0 };
+  const NJ_SWAP_TOLERANCE = 26; // raggio di tolleranza (unità mondo-NJ) per considerare un drop "sopra" una foglia
+
+  function collectNJLeaves(node, out){
+    out = out || [];
+    if (node.isLeaf) out.push(node);
+    node.children.forEach(c => collectNJLeaves(c.node, out));
+    return out;
+  }
+
+  // Converte coordinate schermo -> coordinate "mondo" del layout NJ (prima di translate/scale del pan-zoom)
+  function njWorldPointFromEvent(ev){
+    const rect = njScroll.getBoundingClientRect();
+    const sx = ev.clientX - rect.left, sy = ev.clientY - rect.top;
+    const wx = (sx - njViewState.tx) / njViewState.scale;
+    const wy = (sy - njViewState.ty) / njViewState.scale;
+    return { x: wx, y: wy };
+  }
+
+  function startNJDrag(ev, node, svgEl){
+    ev.preventDefault();
+    ev.stopPropagation();
+    const p = njWorldPointFromEvent(ev);
+    njDragState = {
+      active: true,
+      nodeRef: node,
+      curX: p.x, curY: p.y,
+      hoverTarget: null,
+      pointerId: ev.pointerId
+    };
+
+    function findHoverTarget(worldP){
+      const leaves = collectNJLeaves(lastNJTree);
+      let target = null, bestDist = Infinity;
+      leaves.forEach(l => {
+        if (l === njDragState.nodeRef) return;
+        const lx = l._x + njLayoutOffset.x, ly = l._y + njLayoutOffset.y;
+        const dx = lx - worldP.x, dy = ly - worldP.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < NJ_SWAP_TOLERANCE && d < bestDist){ bestDist = d; target = l; }
+      });
+      return target;
+    }
+
+    function onMove(mev){
+      if (!njDragState) return;
+      const mp = njWorldPointFromEvent(mev);
+      njDragState.curX = mp.x; njDragState.curY = mp.y;
+      njDragState.hoverTarget = findHoverTarget(mp);
+      renderNJTree();
+    }
+    function onUp(uev){
+      if (!njDragState) return;
+      const dropP = njWorldPointFromEvent(uev);
+      const target = findHoverTarget(dropP);
+      if (target){
+        swapNJLeaves(njDragState.nodeRef, target);
+      }
+      njDragState = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      renderNJTree();
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    renderNJTree();
+  }
+
+  function swapNJLeaves(nodeA, nodeB){
+    const tmpLabel = nodeA.label, tmpOrigId = nodeA.originalLeafId;
+    nodeA.label = nodeB.label; nodeA.originalLeafId = nodeB.originalLeafId;
+    nodeB.label = tmpLabel; nodeB.originalLeafId = tmpOrigId;
+    // lo scambio invalida un eventuale risultato di verifica precedente: va ripetuto sull'albero modificato
+    lastVerifyResult = null;
+    verifyResult.classList.remove('show');
+  }
+
+  function rebuildNJFromSnapshot(){
+    if (!lastMatrixSnapshot){
+      lastNJTree = null;
+      lastVerifyResult = null;
+      verifyResult.classList.remove('show');
+      renderNJTree();
+      return;
+    }
+    const { leaves, matrix } = lastMatrixSnapshot;
+    lastNJTree = buildNeighborJoiningTree(leaves, matrix);
+    lastVerifyResult = null;
+    verifyResult.classList.remove('show');
+    renderNJTree();
+  }
+
+  // Verifica specifica per la metrica Temporale: su dati additivi, NJ deve ricostruire un albero
+  // le cui distanze (somma dei pesi lungo il cammino) coincidono ESATTAMENTE con la matrice di input.
+  function computeNJPathDistances(rootedTree, leafIds){
+    // Costruisce l'adiacenza pesata del grafo NJ (non orientato) usando gli stessi nodi dell'albero radicato
+    const adj = new Map();
+    function collectEdges(node){
+      if (!adj.has(node.id)) adj.set(node.id, []);
+      node.children.forEach(c => {
+        if (!adj.has(c.node.id)) adj.set(c.node.id, []);
+        adj.get(node.id).push({ to: c.node.id, w: c.weight });
+        adj.get(c.node.id).push({ to: node.id, w: c.weight });
+        collectEdges(c.node);
+      });
+    }
+    collectEdges(rootedTree);
+
+    // mappa da originalLeafId -> id interno del nodo NJ (serve perché leafIds sono id "originali")
+    const leafNJId = new Map();
+    (function findLeaves(node){
+      if (node.isLeaf) leafNJId.set(node.originalLeafId, node.id);
+      node.children.forEach(c => findLeaves(c.node));
+    })(rootedTree);
+
+    function dijkstra(sourceNJId){
+      const dist = new Map();
+      adj.forEach((_, id) => dist.set(id, Infinity));
+      dist.set(sourceNJId, 0);
+      const visited = new Set();
+      const pq = [[0, sourceNJId]];
+      while (pq.length){
+        pq.sort((a,b)=>a[0]-b[0]);
+        const [d,u] = pq.shift();
+        if (visited.has(u)) continue;
+        visited.add(u);
+        (adj.get(u)||[]).forEach(e => {
+          const nd = d+e.w;
+          if (nd < dist.get(e.to)){ dist.set(e.to, nd); pq.push([nd, e.to]); }
+        });
+      }
+      return dist;
+    }
+
+    const n = leafIds.length;
+    const M = Array.from({length:n}, () => new Array(n).fill(0));
+    for (let i=0;i<n;i++){
+      const srcNJ = leafNJId.get(leafIds[i]);
+      const dist = dijkstra(srcNJ);
+      for (let j=0;j<n;j++){
+        M[i][j] = dist.get(leafNJId.get(leafIds[j]));
+      }
+    }
+    return M;
+  }
+
+  function runVerifyTemporalAdditivity(leafIds){
+    const inputMatrix = lastMatrixSnapshot.matrix;
+    const njMatrix = computeNJPathDistances(lastNJTree, leafIds);
+
+    const TOL = 1e-6; // tolleranza per errori di floating point
+    let maxDiff = 0;
+    let mismatches = 0;
+    const n = leafIds.length;
+    let totalPairs = 0;
+    const leafStatus = new Map();
+    leafIds.forEach(id => leafStatus.set(id, true));
+
+    for (let i=0;i<n;i++){
+      for (let j=i+1;j<n;j++){
+        totalPairs++;
+        const diff = Math.abs(inputMatrix[i][j] - njMatrix[i][j]);
+        maxDiff = Math.max(maxDiff, diff);
+        if (diff > TOL){
+          mismatches++;
+          leafStatus.set(leafIds[i], false);
+          leafStatus.set(leafIds[j], false);
+        }
+      }
+    }
+
+    const pass = mismatches === 0;
+    const correct = totalPairs - mismatches;
+    const pct = totalPairs > 0 ? Math.round((correct/totalPairs)*100) : 100;
+
+    lastVerifyResult = { pct, pass, correct, total: totalPairs, leafStatus };
+
+    verifyResult.className = 'verify-result show ' + (pass ? 'pass' : 'fail');
+    verifyResult.innerHTML = '';
+    const badge = document.createElement('span');
+    badge.textContent = pass
+      ? '✓ PASS — la matrice NJ riproduce esattamente quella temporale'
+      : '✗ FAIL — la matrice NJ non coincide con quella temporale';
+    verifyResult.appendChild(badge);
+    const pctSpan = document.createElement('span');
+    pctSpan.className = 'pct';
+    pctSpan.textContent = pass
+      ? `${correct}/${totalPairs} coppie esatte (scarto max ${maxDiff.toExponential(2)})`
+      : `${correct}/${totalPairs} coppie esatte, scarto massimo ${maxDiff.toFixed(3)}`;
+    verifyResult.appendChild(pctSpan);
+
+    renderNJTree();
+  }
+
+  function runVerifyAdjacencies(){
+    if (!lastNJTree || !lastMatrixSnapshot) return;
+    if (currentSource !== 'regularized'){
+      verifyResult.className = 'verify-result show fail';
+      verifyResult.innerHTML = '';
+      const badge = document.createElement('span');
+      badge.textContent = '⚠ Verifica valida solo su struttura Regolarizzata';
+      verifyResult.appendChild(badge);
+      const pctSpan = document.createElement('span');
+      pctSpan.className = 'pct';
+      pctSpan.textContent = "l'originale può avere nodi di grado > 3, non confrontabile 1:1 con NJ";
+      verifyResult.appendChild(pctSpan);
+      return;
+    }
+    const leafIds = lastMatrixSnapshot.leaves.map(l => l.id);
+
+    if (currentMetric === 'temporal'){
+      runVerifyTemporalAdditivity(leafIds);
+      return;
+    }
+
+    const struct = getActiveStructure();
+    const njPairs = computeSiblingPairsFromNJ(lastNJTree);
+    const originalPairs = computeSiblingPairsFromStructure(leafIds, struct);
+
+    // Confrontiamo l'insieme delle coppie "fratelli dirette" tra NJ e la struttura regolarizzata.
+    // Percentuale: quante coppie combaciano sul totale delle coppie osservate in entrambe le fonti.
+    const union = new Set([...njPairs, ...originalPairs]);
+    let correct = 0;
+    union.forEach(p => { if (njPairs.has(p) && originalPairs.has(p)) correct++; });
+    const total = union.size || 1;
+    const pct = Math.round((correct/total)*100);
+    const pass = pct === 100;
+
+    // stato per-foglia: true se almeno una sua coppia corretta esiste, false se le sue coppie sono tutte sbagliate,
+    // null se la foglia non ha un fratello diretto misurabile in nessuno dei due alberi
+    const leafStatus = new Map();
+    leafIds.forEach(id => {
+      const involvedNJ = [...njPairs].filter(p => p.split('|').includes(String(id)));
+      if (involvedNJ.length === 0){ leafStatus.set(id, null); return; }
+      const anyCorrect = involvedNJ.some(p => originalPairs.has(p));
+      leafStatus.set(id, anyCorrect);
+    });
+
+    lastVerifyResult = { pct, pass, correct, total, leafStatus };
+
+    verifyResult.className = 'verify-result show ' + (pass ? 'pass' : 'fail');
+    verifyResult.innerHTML = '';
+    const badge = document.createElement('span');
+    badge.textContent = pass ? '✓ PASS — adiacenze corrette' : '✗ FAIL — adiacenze non corrispondenti';
+    verifyResult.appendChild(badge);
+    const pctSpan = document.createElement('span');
+    pctSpan.className = 'pct';
+    pctSpan.textContent = `${correct}/${total} coppie (${pct}%)`;
+    verifyResult.appendChild(pctSpan);
+
+    renderNJTree();
+  }
+
+  verifyBtn.addEventListener('click', runVerifyAdjacencies);
+
+  function openMatrixPanel(){
+    matrixOpen = true;
+    document.getElementById('matrixPanel').classList.add('open');
+    viewState.userMoved = false; // ri-centra l'albero nello spazio ridotto
+    rebuildMatrixSnapshot();
+    render();
+  }
+
+  function closeMatrixPanel(){
+    matrixOpen = false;
+    document.getElementById('matrixPanel').classList.remove('open');
+    highlightedLeafIds = [];
+    selectedDistanceValue = null;
+    viewState.userMoved = false;
+    render();
+  }
+
+  document.getElementById('matrixCloseBtn').addEventListener('click', closeMatrixPanel);
+
+  document.querySelectorAll('.metric-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.metric-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentMetric = btn.dataset.metric;
+      highlightedLeafIds = [];
+      selectedDistanceValue = null;
+      rebuildMatrixSnapshot();
+    });
+  });
+
+  const actionSelect = document.getElementById('actionSelect');
+  const rebuildMatrixOption = document.getElementById('rebuildMatrixOption');
+
+  function updateActionSelectAvailability(){
+    const leafCount = nodes.filter(n => n.children.length === 0).length;
+    rebuildMatrixOption.disabled = leafCount < 3;
+  }
+
+  actionSelect.addEventListener('change', () => {
+    if (actionSelect.value === 'rebuild-matrix'){
+      openMatrixPanel();
+    }
+    actionSelect.value = '';
+  });
+
+  // ---------- Loop / controlli ----------
+  let playing = false;
+  let timer = null;
+  let intervalMs = 2400;
+  let generation = 0;
+
+  const playBtn = document.getElementById('playBtn');
+  const playIcon = document.getElementById('playIcon');
+  const playLabel = document.getElementById('playLabel');
+  const stepBtn = document.getElementById('stepBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const speedRange = document.getElementById('speedRange');
+  const speedLabel = document.getElementById('speedLabel');
+  const seedInput = document.getElementById('seedInput');
+  const applySeedBtn = document.getElementById('applySeedBtn');
+  const ubtBtn = document.getElementById('ubtBtn');
+  const ubtLabel = document.getElementById('ubtLabel');
+
+  const statGen = document.getElementById('statGen');
+  const statNodes = document.getElementById('statNodes');
+  const statLeaves = document.getElementById('statLeaves');
+
+  function updateStats(){
+    statGen.textContent = generation;
+    statNodes.textContent = nodes.length;
+    statLeaves.textContent = nodes.filter(n => n.children.length === 0).length;
+    updateActionSelectAvailability();
+    refreshMatrixIfOpen();
+  }
+
+  function doStep(){
+    const result = step();
+    if (!result) return;
+    generation += 1;
+    flashNodeId = result.parent.id;
+    flashUntil = performance.now() + 650;
+    render();
+    updateStats();
+    setTimeout(() => { render(); }, 680);
+  }
+
+  function setPlaying(p){
+    playing = p;
+    if (playing){
+      clockStart();
+      playIcon.innerHTML = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+      playLabel.textContent = 'Pausa';
+      timer = setInterval(doStep, intervalMs);
+    } else {
+      clockStop();
+      playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+      playLabel.textContent = 'Avvia';
+      clearInterval(timer);
+    }
+  }
+
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+  stepBtn.addEventListener('click', () => { if(playing) setPlaying(false); doStep(); });
+
+  ubtBtn.addEventListener('click', () => {
+    ubtMode = !ubtMode;
+    ubtBtn.classList.toggle('toggled', ubtMode);
+    ubtLabel.textContent = ubtMode ? 'Torna a rooted' : 'Proiezione UBT';
+    viewState.userMoved = false; // ri-centra automaticamente durante il morph
+    animateMorph(ubtMode ? 1 : 0);
+  });
+
+  resetBtn.addEventListener('click', () => {
+    setPlaying(false);
+    generation = 0;
+    viewState.userMoved = false;
+    ubtMode = false;
+    morphT = 0;
+    ubtBtn.classList.remove('toggled');
+    ubtLabel.textContent = 'Proiezione UBT';
+    closeMatrixPanel();
+    makeRoot(seedString);
+    render();
+    updateStats();
+  });
+
+  speedRange.addEventListener('input', () => {
+    intervalMs = parseInt(speedRange.value, 10);
+    speedLabel.textContent = (intervalMs/1000).toFixed(1) + 's';
+    if (playing){ clearInterval(timer); timer = setInterval(doStep, intervalMs); }
+  });
+
+  applySeedBtn.addEventListener('click', () => {
+    const raw = seedInput.value.trim();
+    const cleaned = raw.split('').filter(c => c === '0' || c === '1').join('');
+    if (cleaned.length < 2){
+      seedInput.style.borderColor = 'var(--mutation)';
+      setTimeout(() => seedInput.style.borderColor = '', 500);
+      return;
+    }
+    seedString = cleaned;
+    seedInput.value = cleaned;
+    setPlaying(false);
+    generation = 0;
+    viewState.userMoved = false;
+    ubtMode = false;
+    morphT = 0;
+    ubtBtn.classList.remove('toggled');
+    ubtLabel.textContent = 'Proiezione UBT';
+    closeMatrixPanel();
+    makeRoot(seedString);
+    render();
+    updateStats();
+  });
+
+  window.addEventListener('resize', () => { if(!viewState.userMoved) render(); });
+
+  // ---------- Avvio ----------
+  makeRoot(seedString);
+  render();
+  updateStats();
+
+})();
+</script>
+</body>
+</html>

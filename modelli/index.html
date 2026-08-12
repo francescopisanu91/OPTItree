@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modelli — OPTItree</title>
+<meta name="description" content="Il modello computazionale del progetto OPTItree: ML_approach, repository di ricerca su GitHub.">
+
+<style>
+:root{
+  --ink:#141a24; --deep:#1b2436; --paper:#f3f0e7; --paper-warm:#eae5d6;
+  --mint:#3fb28f; --mint-bright:#5fd6b0; --gold:#c9a24b;
+  --line:rgba(20,26,36,0.14);
+  --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --sans: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+  --maxw: 1080px;
+}
+@media (prefers-reduced-motion: reduce){ *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.6; -webkit-font-smoothing:antialiased; }
+a{ color:inherit; }
+img{ max-width:100%; display:block; }
+
+.topbar{ position:sticky; top:0; z-index:50; background:rgba(243,240,231,0.94); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+.topbar-inner{ max-width:var(--maxw); margin:0 auto; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.brandmark{ display:flex; align-items:center; gap:10px; font-family:var(--serif); font-size:19px; font-weight:600; text-decoration:none; color:var(--ink); letter-spacing:-0.01em; }
+.brandmark .dot{ width:8px; height:8px; border-radius:50%; background:var(--mint); flex-shrink:0; }
+.topnav{ display:flex; align-items:center; gap:24px; }
+.topnav a{ font-family:var(--sans); font-size:14px; font-weight:600; text-decoration:none; color:var(--ink); opacity:0.7; transition:opacity 0.15s ease; }
+.topnav a:hover{ opacity:1; }
+.topnav a.active{ opacity:1; border-bottom:2px solid var(--mint); padding-bottom:2px; }
+.lang-switch{ position:relative; font-family:var(--mono); font-size:12.5px; }
+.lang-switch select{ appearance:none; -webkit-appearance:none; background:var(--ink); color:var(--paper); border:1px solid var(--ink); border-radius:5px; padding:7px 30px 7px 12px; font-family:var(--mono); font-size:12.5px; font-weight:600; letter-spacing:0.03em; cursor:pointer; }
+.lang-switch::after{ content:"⌄"; position:absolute; right:11px; top:50%; transform:translateY(-55%); color:var(--paper); pointer-events:none; font-size:13px; }
+
+.pagehead{ background:var(--deep); color:var(--paper); padding:64px 24px 56px; }
+.pagehead-inner{ max-width:var(--maxw); margin:0 auto; }
+.eyebrow{ font-family:var(--mono); font-size:12.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mint-bright); display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+.eyebrow::before{ content:""; width:26px; height:1px; background:var(--mint-bright); }
+.pagehead h1{ font-family:var(--serif); font-weight:600; font-size:clamp(32px,4.5vw,50px); line-height:1.06; margin:0 0 18px; letter-spacing:-0.01em; }
+.pagehead p{ font-size:16.5px; line-height:1.7; color:rgba(243,240,231,0.8); max-width:60ch; margin:0; }
+
+section{ padding:64px 24px; }
+.section-inner{ max-width:var(--maxw); margin:0 auto; }
+
+.repo-card{
+  border:1px solid var(--line); border-radius:12px; background:var(--paper-warm);
+  padding:36px 34px; display:flex; flex-direction:column; gap:18px;
+}
+.repo-card .repo-top{ display:flex; align-items:center; gap:14px; }
+.repo-card .repo-icon{ font-family:var(--serif); font-size:32px; color:var(--mint); }
+.repo-card h2{ font-family:var(--serif); font-size:24px; margin:0; }
+.repo-card .repo-sub{ font-family:var(--mono); font-size:12.5px; color:rgba(20,26,36,0.5); }
+.repo-card p{ font-size:15.5px; line-height:1.75; color:rgba(20,26,36,0.78); margin:0; max-width:68ch; }
+.repo-card .status{
+  display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11.5px;
+  color:var(--gold); letter-spacing:0.04em; text-transform:uppercase; width:fit-content;
+}
+.repo-card .status::before{ content:""; width:7px; height:7px; border-radius:50%; background:var(--gold); }
+.repo-card a.btn{
+  align-self:flex-start; font-family:var(--sans); font-weight:700; font-size:14.5px;
+  padding:13px 22px; border-radius:6px; text-decoration:none;
+  background:var(--ink); color:var(--paper); display:inline-flex; align-items:center; gap:8px;
+  transition:transform 0.15s ease, box-shadow 0.15s ease;
+}
+.repo-card a.btn:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(20,26,36,0.25); }
+
+footer{ background:var(--paper-warm); border-top:1px solid var(--line); padding:32px 24px; text-align:center; }
+footer a{ font-family:var(--mono); font-size:12.5px; color:rgba(20,26,36,0.55); text-decoration:underline; text-decoration-color:rgba(20,26,36,0.25); }
+
+html[lang="en"] [data-it]{ display:none !important; }
+html[lang="it"] [data-en]{ display:none !important; }
+
+@media (max-width: 700px){ .topnav{ display:none; } .repo-card{ padding:28px 24px; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html" class="brandmark"><span class="dot"></span>OPTItree</a>
+    <nav class="topnav">
+      <a href="../index.html"><span data-it>Home</span><span data-en>Home</span></a>
+      <a href="index.html" class="active"><span data-it>Modelli</span><span data-en>Models</span></a>
+      <a href="../pubblicazioni/index.html"><span data-it>Pubblicazioni</span><span data-en>Publications</span></a>
+      <a href="../didattica/index.html"><span data-it>Didattica</span><span data-en>Outreach</span></a>
+    </nav>
+    <div class="lang-switch">
+      <select id="langSelect" aria-label="Language / Lingua">
+        <option value="it">IT — Italiano</option>
+        <option value="en">EN — English</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<header class="pagehead">
+  <div class="pagehead-inner">
+    <span class="eyebrow"><span data-it>Codice di ricerca</span><span data-en>Research code</span></span>
+    <h1><span data-it>Modelli</span><span data-en>Models</span></h1>
+    <p>
+      <span data-it>Il modello computazionale sviluppato nell'ambito di OPTItree vive interamente nel repository GitHub del progetto. Non è materiale divulgativo: è codice di ricerca in sviluppo.</span>
+      <span data-en>The computational model developed within OPTItree lives entirely in the project's GitHub repository. It is not outreach material: it is research code under active development.</span>
+    </p>
+  </div>
+</header>
+
+<section>
+  <div class="section-inner">
+    <div class="repo-card">
+      <div class="repo-top">
+        <span class="repo-icon">⟨/⟩</span>
+        <div>
+          <h2>ML_approach</h2>
+          <div class="repo-sub">github.com/francescopisanu91/OPTItree</div>
+        </div>
+      </div>
+      <span class="status"><span data-it>in sviluppo</span><span data-en>under development</span></span>
+      <p>
+        <span data-it>ML_approach esplora l'uso di tecniche di apprendimento automatico come componente degli algoritmi di stima e approssimazione per il Balanced Minimum Evolution Problem, in continuità con la struttura poliedrale studiata dal progetto.</span>
+        <span data-en>ML_approach explores the use of machine learning techniques as a component of the estimation and approximation algorithms for the Balanced Minimum Evolution Problem, building on the polyhedral structure studied by the project.</span>
+      </p>
+      <a class="btn" href="https://github.com/francescopisanu91/OPTItree" target="_blank" rel="noopener">
+        <span data-it>Vai al repository su GitHub</span><span data-en>Go to the GitHub repository</span> →
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <a href="../index.html">← <span data-it>Torna alla home</span><span data-en>Back to home</span></a>
+</footer>
+
+<script>
+  const select = document.getElementById('langSelect');
+  const root = document.documentElement;
+  function applyLang(lang){ root.setAttribute('lang', lang); try{ localStorage.setItem('site-lang', lang); }catch(e){} }
+  select.addEventListener('change', (e) => applyLang(e.target.value));
+  (function initLang(){
+    let stored = null; try{ stored = localStorage.getItem('site-lang'); }catch(e){}
+    const browserLang = (navigator.language || 'it').toLowerCase().startsWith('en') ? 'en' : 'it';
+    const initial = stored || browserLang; select.value = initial; applyLang(initial);
+  })();
+</script>
+
+</body>
+</html>

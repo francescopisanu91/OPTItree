@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pubblicazioni — OPTItree</title>
+<meta name="description" content="Pubblicazioni scientifiche legate al progetto OPTItree e al lavoro di ricerca di Francesco Pisanu sulla filogenetica computazionale.">
+
+<style>
+:root{
+  --ink:#141a24; --deep:#1b2436; --paper:#f3f0e7; --paper-warm:#eae5d6;
+  --mint:#3fb28f; --mint-bright:#5fd6b0; --gold:#c9a24b;
+  --line:rgba(20,26,36,0.14);
+  --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --sans: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+  --maxw: 1080px;
+}
+@media (prefers-reduced-motion: reduce){ *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.6; -webkit-font-smoothing:antialiased; }
+a{ color:inherit; }
+img{ max-width:100%; display:block; }
+
+.topbar{ position:sticky; top:0; z-index:50; background:rgba(243,240,231,0.94); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+.topbar-inner{ max-width:var(--maxw); margin:0 auto; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.brandmark{ display:flex; align-items:center; gap:10px; font-family:var(--serif); font-size:19px; font-weight:600; text-decoration:none; color:var(--ink); letter-spacing:-0.01em; }
+.brandmark .dot{ width:8px; height:8px; border-radius:50%; background:var(--mint); flex-shrink:0; }
+.topnav{ display:flex; align-items:center; gap:24px; }
+.topnav a{ font-family:var(--sans); font-size:14px; font-weight:600; text-decoration:none; color:var(--ink); opacity:0.7; transition:opacity 0.15s ease; }
+.topnav a:hover{ opacity:1; }
+.topnav a.active{ opacity:1; border-bottom:2px solid var(--mint); padding-bottom:2px; }
+.lang-switch{ position:relative; font-family:var(--mono); font-size:12.5px; }
+.lang-switch select{ appearance:none; -webkit-appearance:none; background:var(--ink); color:var(--paper); border:1px solid var(--ink); border-radius:5px; padding:7px 30px 7px 12px; font-family:var(--mono); font-size:12.5px; font-weight:600; letter-spacing:0.03em; cursor:pointer; }
+.lang-switch::after{ content:"⌄"; position:absolute; right:11px; top:50%; transform:translateY(-55%); color:var(--paper); pointer-events:none; font-size:13px; }
+
+.pagehead{ background:var(--deep); color:var(--paper); padding:64px 24px 56px; }
+.pagehead-inner{ max-width:var(--maxw); margin:0 auto; }
+.eyebrow{ font-family:var(--mono); font-size:12.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mint-bright); display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+.eyebrow::before{ content:""; width:26px; height:1px; background:var(--mint-bright); }
+.pagehead h1{ font-family:var(--serif); font-weight:600; font-size:clamp(32px,4.5vw,50px); line-height:1.06; margin:0 0 18px; letter-spacing:-0.01em; }
+.pagehead p{ font-size:16.5px; line-height:1.7; color:rgba(243,240,231,0.8); max-width:64ch; margin:0; }
+
+section{ padding:56px 24px; }
+.section-inner{ max-width:var(--maxw); margin:0 auto; }
+
+.pub-list{ display:flex; flex-direction:column; gap:22px; }
+.pub-card{
+  border:1px solid var(--line); border-radius:12px; background:var(--paper-warm);
+  padding:30px 32px;
+}
+.pub-card .pub-meta{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px;
+}
+.pub-card .pub-tag{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase;
+  border-radius:20px; padding:4px 11px; border:1px solid;
+}
+.pub-tag.independent{ color:var(--ink); border-color:rgba(20,26,36,0.3); }
+.pub-tag.msca{ color:var(--mint); border-color:rgba(63,178,143,0.4); }
+.pub-card .venue{ font-family:var(--mono); font-size:12px; color:rgba(20,26,36,0.5); }
+
+.pub-card h2{ font-family:var(--serif); font-size:22px; line-height:1.3; margin:0 0 6px; font-weight:600; }
+.pub-card .authors{ font-size:13.5px; color:rgba(20,26,36,0.6); margin-bottom:18px; }
+.pub-card .authors b{ color:var(--ink); }
+
+.pub-card .explainer{
+  border-left:2px solid var(--mint); padding-left:18px; margin-bottom:20px;
+}
+.pub-card .explainer-label{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase;
+  color:var(--mint); margin-bottom:8px; display:block;
+}
+.pub-card .explainer p{ font-size:14.5px; line-height:1.75; color:rgba(20,26,36,0.8); margin:0; max-width:70ch; }
+
+.pub-card a.readlink{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:var(--sans); font-weight:700; font-size:13.5px;
+  color:var(--ink); text-decoration:none;
+  border-bottom:1px solid rgba(20,26,36,0.3); padding-bottom:2px;
+}
+.pub-card a.readlink:hover{ border-color:var(--ink); }
+.pub-card a.readlink .arrow{ transition:transform 0.15s ease; }
+.pub-card a.readlink:hover .arrow{ transform:translateX(3px); }
+
+.pub-empty-note{
+  margin-top:8px; padding:18px 22px; border:1px dashed var(--line); border-radius:10px;
+  font-size:13.5px; color:rgba(20,26,36,0.5); font-style:italic;
+}
+
+footer{ background:var(--paper-warm); border-top:1px solid var(--line); padding:32px 24px; text-align:center; }
+footer a{ font-family:var(--mono); font-size:12.5px; color:rgba(20,26,36,0.55); text-decoration:underline; text-decoration-color:rgba(20,26,36,0.25); }
+
+html[lang="en"] [data-it]{ display:none !important; }
+html[lang="it"] [data-en]{ display:none !important; }
+
+@media (max-width: 700px){ .topnav{ display:none; } .pub-card{ padding:24px 22px; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html" class="brandmark"><span class="dot"></span>OPTItree</a>
+    <nav class="topnav">
+      <a href="../index.html"><span data-it>Home</span><span data-en>Home</span></a>
+      <a href="../modelli/index.html"><span data-it>Modelli</span><span data-en>Models</span></a>
+      <a href="index.html" class="active"><span data-it>Pubblicazioni</span><span data-en>Publications</span></a>
+      <a href="../didattica/index.html"><span data-it>Didattica</span><span data-en>Outreach</span></a>
+    </nav>
+    <div class="lang-switch">
+      <select id="langSelect" aria-label="Language / Lingua">
+        <option value="it">IT — Italiano</option>
+        <option value="en">EN — English</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<header class="pagehead">
+  <div class="pagehead-inner">
+    <span class="eyebrow"><span data-it>Output scientifico</span><span data-en>Scientific output</span></span>
+    <h1><span data-it>Pubblicazioni</span><span data-en>Publications</span></h1>
+    <p>
+      <span data-it>Gli articoli qui elencati riguardano il lavoro di ricerca su cui si fonda OPTItree. Ogni voce indica se il lavoro è stato finanziato dal progetto MSCA o se lo precede, ed è accompagnata da una breve spiegazione in linguaggio semplice.</span>
+      <span data-en>The papers listed here relate to the research work OPTItree builds on. Each entry indicates whether the work was funded by the MSCA project or precedes it, and comes with a short plain-language explanation.</span>
+    </p>
+  </div>
+</header>
+
+<section>
+  <div class="section-inner">
+    <div class="pub-list">
+
+      <div class="pub-card">
+        <div class="pub-meta">
+          <span class="pub-tag independent"><span data-it>non finanziato da MSCA</span><span data-en>not MSCA-funded</span></span>
+          <span class="venue">2026</span>
+        </div>
+        <h2>A Note on the Approximability of the Balanced Minimum Evolution Problem</h2>
+        <div class="authors"><span data-it>Autori:</span><span data-en>Authors:</span> Daniele Catanzaro, Raffaele Pesenti, <b>Francesco Pisanu</b></div>
+
+        <div class="explainer">
+          <span class="explainer-label"><span data-it>in parole semplici</span><span data-en>in plain words</span></span>
+          <p>
+            <span data-it>Il Balanced Minimum Evolution Problem è, nel caso generale, un problema APX-difficile: non solo è difficile trovare la soluzione ottima, ma è anche difficile garantire quanto una soluzione approssimata sia vicina all'ottimo, per istanze del tutto arbitrarie. Questo articolo — il primo lavoro di Francesco Pisanu sul tema — mostra che nei casi concreti che si incontrano davvero, cioè quando le distanze osservate tra le specie sono positive e limitate, il problema smette di essere così ostile: esiste un algoritmo che gira in tempo polinomiale e che garantisce, per costruzione, una soluzione di qualità certificata — non necessariamente ottima, ma con un margine di errore dimostrabile. È il primo passo verso l'obiettivo centrale di OPTItree: certificare la qualità delle filogenie stimate anche quando trovarle in modo esatto è troppo costoso.</span>
+            <span data-en>The Balanced Minimum Evolution Problem is, in the general case, APX-hard: not only is finding the optimal solution hard, but it is also hard to guarantee how close an approximate solution comes to the optimum, for entirely arbitrary instances. This paper — Francesco Pisanu's first work on the topic — shows that in the concrete cases actually encountered in practice, that is, when the observed distances between species are positive and bounded, the problem stops being so unfriendly: there exists a polynomial-time algorithm that guarantees, by construction, a solution of certified quality — not necessarily optimal, but with a provable error margin. It is a first step toward OPTItree's central goal: certifying the quality of estimated phylogenies even when finding them exactly is too costly.</span>
+          </p>
+        </div>
+
+        <a class="readlink" href="https://www.sciencedirect.com/science/article/abs/pii/S0167637726000350" target="_blank" rel="noopener">
+          <span data-it>Leggi l'articolo su ScienceDirect</span><span data-en>Read the paper on ScienceDirect</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+
+    </div>
+
+    <div class="pub-empty-note">
+      <span data-it>I risultati prodotti direttamente dal progetto OPTItree (Horizon Europe MSCA) saranno aggiunti qui non appena disponibili.</span>
+      <span data-en>Results produced directly by the OPTItree project (Horizon Europe MSCA) will be added here as soon as they are available.</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <a href="../index.html">← <span data-it>Torna alla home</span><span data-en>Back to home</span></a>
+</footer>
+
+<script>
+  const select = document.getElementById('langSelect');
+  const root = document.documentElement;
+  function applyLang(lang){ root.setAttribute('lang', lang); try{ localStorage.setItem('site-lang', lang); }catch(e){} }
+  select.addEventListener('change', (e) => applyLang(e.target.value));
+  (function initLang(){
+    let stored = null; try{ stored = localStorage.getItem('site-lang'); }catch(e){}
+    const browserLang = (navigator.language || 'it').toLowerCase().startsWith('en') ? 'en' : 'it';
+    const initial = stored || browserLang; select.value = initial; applyLang(initial);
+  })();
+</script>
+
+</body>
+</html>

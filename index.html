@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPTItree — modelli poliedrali per la filogenetica computazionale</title>
+<meta name="description" content="OPTItree: progetto di ricerca in modellistica matematica per la filogenetica computazionale, su modelli poliedrali, ILP e algoritmi di approssimazione. Horizon Europe MSCA, Ca' Foscari Venezia.">
+
+<style>
+:root{
+  --ink:#141a24;
+  --deep:#1b2436;
+  --paper:#f3f0e7;
+  --paper-warm:#eae5d6;
+  --mint:#3fb28f;
+  --mint-bright:#5fd6b0;
+  --gold:#c9a24b;
+  --line:rgba(20,26,36,0.14);
+  --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --sans: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+  --maxw: 1080px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+}
+
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+a{ color:inherit; }
+img{ max-width:100%; display:block; }
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  background:rgba(243,240,231,0.94); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.topbar-inner{
+  max-width:var(--maxw); margin:0 auto; padding:16px 24px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+.brandmark{
+  display:flex; align-items:center; gap:10px;
+  font-family:var(--serif); font-size:19px; font-weight:600;
+  text-decoration:none; color:var(--ink); letter-spacing:-0.01em;
+}
+.brandmark .dot{ width:8px; height:8px; border-radius:50%; background:var(--mint); flex-shrink:0; }
+.topnav{ display:flex; align-items:center; gap:24px; }
+.topnav a{
+  font-family:var(--sans); font-size:14px; font-weight:600;
+  text-decoration:none; color:var(--ink); opacity:0.7; transition:opacity 0.15s ease;
+}
+.topnav a:hover{ opacity:1; }
+.lang-switch{ position:relative; font-family:var(--mono); font-size:12.5px; }
+.lang-switch select{
+  appearance:none; -webkit-appearance:none;
+  background:var(--ink); color:var(--paper); border:1px solid var(--ink);
+  border-radius:5px; padding:7px 30px 7px 12px;
+  font-family:var(--mono); font-size:12.5px; font-weight:600; letter-spacing:0.03em; cursor:pointer;
+}
+.lang-switch::after{
+  content:"⌄"; position:absolute; right:11px; top:50%; transform:translateY(-55%);
+  color:var(--paper); pointer-events:none; font-size:13px;
+}
+
+/* ---------- hero: il progetto ---------- */
+.hero{ background:var(--deep); color:var(--paper); padding:88px 24px 76px; position:relative; overflow:hidden; }
+.hero-bg-grid{
+  position:absolute; inset:0; opacity:0.4;
+  background-image:
+    linear-gradient(rgba(243,240,231,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(243,240,231,0.045) 1px, transparent 1px);
+  background-size:44px 44px;
+}
+.hero-inner{ max-width:var(--maxw); margin:0 auto; position:relative; z-index:2; }
+.eyebrow{
+  font-family:var(--mono); font-size:12.5px; letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--mint-bright); display:flex; align-items:center; gap:10px; margin-bottom:24px;
+}
+.eyebrow::before{ content:""; width:26px; height:1px; background:var(--mint-bright); }
+.hero h1{
+  font-family:var(--serif); font-weight:600; font-size:clamp(40px, 6vw, 68px);
+  line-height:1.02; margin:0 0 26px; letter-spacing:-0.015em;
+}
+.hero p.lede{
+  font-size:18px; line-height:1.7; color:rgba(243,240,231,0.82); max-width:62ch; margin:0 0 34px;
+}
+.hero-ctas{ display:flex; gap:14px; flex-wrap:wrap; }
+.btn{
+  font-family:var(--sans); font-weight:700; font-size:14.5px;
+  padding:13px 22px; border-radius:6px; text-decoration:none;
+  display:inline-flex; align-items:center; gap:8px;
+  transition:transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-primary{ background:var(--mint-bright); color:var(--deep); }
+.btn-primary:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(95,214,176,0.25); }
+.btn-ghost{ border:1px solid rgba(243,240,231,0.35); color:var(--paper); }
+.btn-ghost:hover{ border-color:var(--paper); transform:translateY(-2px); }
+
+/* ---------- section shells ---------- */
+section{ padding:76px 24px; }
+.section-inner{ max-width:var(--maxw); margin:0 auto; }
+.section-head{ max-width:680px; margin-bottom:40px; }
+.section-tag{
+  font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--mint); margin-bottom:12px; display:block;
+}
+.section-head h2{
+  font-family:var(--serif); font-size:clamp(26px,3vw,34px); font-weight:600;
+  margin:0 0 14px; letter-spacing:-0.01em;
+}
+.section-head p{ font-size:15.5px; color:rgba(20,26,36,0.68); margin:0; }
+
+/* ---------- research description ---------- */
+.research-body p{ font-size:16px; line-height:1.8; color:rgba(20,26,36,0.85); margin:0 0 18px; max-width:74ch; }
+.research-body b{ color:var(--ink); }
+
+.polytope-box{
+  margin-top:8px; padding:26px 28px; border-radius:10px;
+  background:var(--ink); color:var(--paper); position:relative; overflow:hidden;
+}
+.polytope-box::before{
+  content:"P ⊂ ℝⁿ"; position:absolute; right:20px; top:16px;
+  font-family:var(--mono); font-size:14px; color:rgba(243,240,231,0.16); letter-spacing:0.05em;
+}
+.polytope-box .tag{ font-family:var(--mono); font-size:11.5px; color:var(--mint-bright); letter-spacing:0.08em; text-transform:uppercase; }
+.polytope-box h4{ font-family:var(--serif); font-size:20px; margin:10px 0 12px; }
+.polytope-box p{ font-size:14.5px; line-height:1.7; color:rgba(243,240,231,0.8); margin:0; max-width:60ch; }
+
+/* ---------- people ---------- */
+.people{ background:var(--paper-warm); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.people-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.person-card{
+  background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:26px 28px;
+}
+.person-card .role{ font-family:var(--mono); font-size:11.5px; color:var(--mint); letter-spacing:0.06em; text-transform:uppercase; }
+.person-card h3{ font-family:var(--serif); font-size:22px; margin:8px 0 4px; }
+.person-card .affil{ font-size:13.5px; color:rgba(20,26,36,0.6); margin-bottom:16px; }
+.person-card a.plink{
+  display:inline-flex; align-items:center; gap:7px;
+  font-family:var(--sans); font-weight:700; font-size:13.5px;
+  color:var(--ink); text-decoration:none;
+  border-bottom:1px solid rgba(20,26,36,0.3); padding-bottom:2px;
+}
+.person-card a.plink:hover{ border-color:var(--ink); }
+.person-card a.plink .arrow{ transition:transform 0.15s ease; }
+.person-card a.plink:hover .arrow{ transform:translateX(3px); }
+
+/* ---------- links row: code + outreach ---------- */
+.cards-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.cards-grid.three{ grid-template-columns:repeat(3,1fr); }
+.topnav a.active{ opacity:1; border-bottom:2px solid var(--mint); padding-bottom:2px; }
+.card{
+  border:1px solid var(--line); border-radius:10px; background:var(--paper);
+  padding:28px 26px; text-decoration:none; color:var(--ink);
+  display:flex; flex-direction:column; gap:14px;
+  transition:transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.card:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(20,26,36,0.08); border-color:rgba(63,178,143,0.4); }
+.card .card-top{ display:flex; align-items:center; justify-content:space-between; }
+.card .kind{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase;
+  color:rgba(20,26,36,0.45); border:1px solid var(--line); border-radius:20px; padding:3px 9px;
+}
+.card .icon{ font-family:var(--serif); font-size:26px; color:var(--mint); line-height:1; }
+.card h3{ font-family:var(--sans); font-size:17px; font-weight:700; margin:0; }
+.card p{ font-size:14px; color:rgba(20,26,36,0.62); margin:0; line-height:1.6; }
+.card .path{
+  margin-top:auto; font-family:var(--mono); font-size:11.5px; color:rgba(20,26,36,0.4);
+  padding-top:12px; border-top:1px dashed var(--line);
+}
+.card.outreach{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.card.outreach .icon{ color:var(--gold); }
+.card.outreach .kind{ color:rgba(243,240,231,0.55); border-color:rgba(243,240,231,0.25); }
+.card.outreach h3{ color:var(--paper); }
+.card.outreach p{ color:rgba(243,240,231,0.68); }
+.card.outreach .path{ color:rgba(243,240,231,0.4); border-top-color:rgba(243,240,231,0.2); }
+.card.outreach:hover{ box-shadow:0 14px 30px rgba(20,26,36,0.35); border-color:var(--gold); }
+
+/* ---------- publications ---------- */
+.publications{ background:var(--paper-warm); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.pub-list{ display:flex; flex-direction:column; gap:0; }
+.pub-item{
+  padding:22px 0; border-bottom:1px solid var(--line);
+  display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:start;
+}
+.pub-item:first-child{ padding-top:0; }
+.pub-item .pub-num{ font-family:var(--mono); font-size:13px; color:var(--mint); padding-top:2px; }
+.pub-item h4{ font-family:var(--serif); font-size:17px; margin:0 0 6px; font-weight:600; }
+.pub-item p{ font-size:13.5px; line-height:1.65; color:rgba(20,26,36,0.65); margin:0; max-width:64ch; }
+.pub-item .pub-link{ font-family:var(--mono); font-size:12px; color:var(--mint); margin-top:8px; display:inline-block; }
+.pub-empty{ padding:24px 0; font-size:14px; color:rgba(20,26,36,0.5); font-style:italic; }
+
+/* ---------- footer ---------- */
+footer{ background:var(--paper-warm); padding:44px 24px 28px; }
+.footer-inner{ max-width:var(--maxw); margin:0 auto; }
+.logo-row{ display:flex; align-items:center; gap:40px; flex-wrap:wrap; padding-bottom:26px; margin-bottom:18px; }
+.logo-item img{ height:58px; width:auto; }
+.footer-links{
+  display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;
+  font-size:13px; color:rgba(20,26,36,0.55); padding-bottom:18px;
+}
+.footer-links a{ text-decoration:underline; text-decoration-color:rgba(20,26,36,0.25); }
+.eu-statement{
+  font-size:10.5px; line-height:1.5; color:rgba(20,26,36,0.42);
+  max-width:74ch; border-top:1px solid var(--line); padding-top:16px;
+}
+
+/* ---------- i18n ---------- */
+html[lang="en"] [data-it]{ display:none !important; }
+html[lang="it"] [data-en]{ display:none !important; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 860px){
+  .people-grid{ grid-template-columns:1fr; }
+  .cards-grid{ grid-template-columns:1fr; }
+  .cards-grid.three{ grid-template-columns:1fr; }
+  .topnav{ display:none; }
+}
+@media (max-width: 560px){
+  .pub-item{ grid-template-columns:1fr; }
+  .logo-row{ gap:26px; }
+  .logo-item img{ height:48px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="#top" class="brandmark"><span class="dot"></span>OPTItree</a>
+    <nav class="topnav">
+      <a href="index.html" class="active"><span data-it>Home</span><span data-en>Home</span></a>
+      <a href="modelli/index.html"><span data-it>Modelli</span><span data-en>Models</span></a>
+      <a href="pubblicazioni/index.html"><span data-it>Pubblicazioni</span><span data-en>Publications</span></a>
+      <a href="didattica/index.html"><span data-it>Didattica</span><span data-en>Outreach</span></a>
+    </nav>
+    <div class="lang-switch">
+      <select id="langSelect" aria-label="Language / Lingua">
+        <option value="it">IT — Italiano</option>
+        <option value="en">EN — English</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="top">
+  <div class="hero-bg-grid" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <span class="eyebrow">
+      <span data-it>Horizon Europe · Marie Skłodowska-Curie Postdoctoral Fellowship</span>
+      <span data-en>Horizon Europe · Marie Skłodowska-Curie Postdoctoral Fellowship</span>
+    </span>
+    <h1>OPTItree</h1>
+    <p class="lede">
+      <span data-it>Modelli, metodi e algoritmi avanzati per la stima di filogenie. Un progetto di modellistica matematica per la filogenetica computazionale: studia la geometria poliedrale che sta dietro al problema di ricostruire un albero filogenetico a partire da dati genetici.</span>
+      <span data-en>Advanced models, methods and algorithms for phylogenetic estimation. A project in mathematical modelling for computational phylogenetics: it studies the polyhedral geometry behind the problem of reconstructing a phylogenetic tree from genetic data.</span>
+    </p>
+    <div class="hero-ctas">
+      <a href="#progetto" class="btn btn-primary"><span data-it>Il progetto</span><span data-en>The project</span></a>
+      <a href="https://cordis.europa.eu/project/id/101272250" target="_blank" rel="noopener" class="btn btn-ghost">CORDIS ↗</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============ IL PROGETTO ============ -->
+<section class="research" id="progetto">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-tag">01 — <span data-it>Il progetto</span><span data-en>The project</span></span>
+      <h2><span data-it>Geometria poliedrale delle filogenie</span><span data-en>Polyhedral geometry of phylogenies</span></h2>
+    </div>
+
+    <div class="research-body">
+      <p>
+        <span data-it>Determinare la filogenia corretta è cruciale nello studio dell'evoluzione di batteri, virus e cellule tumorali — in particolare in scenari sensibili come pandemie e tumorigenesi. Le filogenie sono tipicamente rappresentate da strutture ad albero ottime, soluzioni di problemi di ottimizzazione nonlineare ad alta dimensionalità, spesso troppo costose da calcolare in modo esatto: per questo il software esistente si affida ad algoritmi euristici, che però non possono certificare la correttezza dell'albero stimato.</span>
+        <span data-en>Determining the correct phylogeny is crucial when studying the evolution of bacteria, viruses and tumoral cells — especially in sensitive scenarios such as pandemics and tumorigenesis. Phylogenies are typically represented by optimal tree structures, solutions to high-dimensional nonlinear optimisation problems that are often too computationally expensive to solve exactly: existing software therefore relies on heuristic algorithms, which cannot certify the correctness of the inferred tree.</span>
+      </p>
+      <p>
+        <span data-it>OPTItree lavora su un metodo esatto promettente, basato sul <b>criterio della minima evoluzione bilanciata</b>, noto per la sua consistenza statistica e per solide fondamenta teoriche. Il cuore del progetto è il <b>Balanced Minimum Evolution Problem</b>: un problema di ottimizzazione combinatoria su cui si costruiscono modelli di <b>programmazione lineare intera (ILP)</b> e <b>algoritmi di approssimazione</b> con garanzie teoriche dimostrate.</span>
+        <span data-en>OPTItree focuses on a promising exact method based on the <b>balanced minimum evolution criterion</b>, known for its statistical consistency and solid theoretical foundations. At the core of the project is the <b>Balanced Minimum Evolution Problem</b>: a combinatorial optimisation problem addressed through <b>integer linear programming (ILP)</b> models and <b>approximation algorithms</b> with proven theoretical guarantees.</span>
+      </p>
+
+      <div class="polytope-box">
+        <span class="tag">Polyhedral combinatorics · Combinatorial optimization · ILP</span>
+        <h4><span data-it>Due obiettivi</span><span data-en>Two objectives</span></h4>
+        <p>
+          <span data-it>(i) Approfondire la struttura poliedrale alla base dell'inferenza filogenetica, per superare i modelli allo stato dell'arte — oggi in grado di risolvere in modo esatto solo dataset di dimensione molto ridotta; (ii) progettare algoritmi di approssimazione su misura, capaci di trovare soluzioni di qualità certificata quando i metodi esatti non sono applicabili.</span>
+          <span data-en>(i) Provide deeper insight into the polyhedral structure underlying phylogenetic inference, to outperform current state-of-the-art models — capable today of exactly solving only datasets of very small size; (ii) design tailored approximation algorithms to efficiently find solutions of certified quality when exact methods cannot be applied.</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TEAM ============ -->
+<section class="people" id="team">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-tag">02 — <span data-it>Chi lavora al progetto</span><span data-en>Who works on the project</span></span>
+      <h2><span data-it>Team</span><span data-en>Team</span></h2>
+    </div>
+
+    <div class="people-grid">
+      <div class="person-card">
+        <span class="role"><span data-it>Ricercatore MSCA</span><span data-en>MSCA Fellow</span></span>
+        <h3>Francesco Pisanu</h3>
+        <div class="affil"><span data-it>Ca' Foscari University of Venice — Venice School of Management</span><span data-en>Ca' Foscari University of Venice — Venice School of Management</span></div>
+        <a class="plink" href="https://francescopisanu91.github.io/" target="_blank" rel="noopener">
+          <span data-it>Sito personale</span><span data-en>Personal website</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+
+      <div class="person-card">
+        <span class="role"><span data-it>Supervisore</span><span data-en>Supervisor</span></span>
+        <h3>Raffaele Pesenti</h3>
+        <div class="affil"><span data-it>Professore di Ricerca Operativa, Ca' Foscari Venezia</span><span data-en>Professor of Operations Research, Ca' Foscari Venice</span></div>
+        <a class="plink" href="https://www.unive.it/persone/pesenti" target="_blank" rel="noopener">
+          <span data-it>Pagina docente</span><span data-en>Faculty page</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VAI ALLE ALTRE PAGINE ============ -->
+<section id="risorse">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-tag">03 — <span data-it>Esplora</span><span data-en>Explore</span></span>
+      <h2><span data-it>Modelli, pubblicazioni, didattica</span><span data-en>Models, publications, outreach</span></h2>
+    </div>
+
+    <div class="cards-grid three">
+      <a class="card" href="modelli/index.html">
+        <div class="card-top"><span class="icon">⟨/⟩</span><span class="kind" data-it>codice</span><span class="kind" data-en>code</span></div>
+        <h3><span data-it>Modelli</span><span data-en>Models</span></h3>
+        <p><span data-it>Il modello computazionale del progetto, ML_approach, e il repository GitHub.</span><span data-en>The project's computational model, ML_approach, and the GitHub repository.</span></p>
+        <span class="path">modelli/</span>
+      </a>
+
+      <a class="card" href="pubblicazioni/index.html">
+        <div class="card-top"><span class="icon">§</span><span class="kind" data-it>output</span><span class="kind" data-en>output</span></div>
+        <h3><span data-it>Pubblicazioni</span><span data-en>Publications</span></h3>
+        <p><span data-it>Gli articoli scientifici legati al progetto, con una spiegazione divulgativa di ciascuno.</span><span data-en>The scientific papers related to the project, each with a plain-language explanation.</span></p>
+        <span class="path">pubblicazioni/</span>
+      </a>
+
+      <a class="card outreach" href="didattica/index.html">
+        <div class="card-top"><span class="icon">✎</span><span class="kind" data-it>didattica</span><span class="kind" data-en>outreach</span></div>
+        <h3><span data-it>La matematica dell'evoluzione</span><span data-en>The mathematics of evolution</span></h3>
+        <p><span data-it>Una giornata di laboratori per bambini che rende intuibili, con giochi e analogie, alcune idee di filogenetica computazionale.</span><span data-en>A day of workshops for children that makes some ideas from computational phylogenetics intuitive through games and analogies.</span></p>
+        <span class="path">didattica/</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ISTITUZIONALE ============ -->
+<footer>
+  <div class="footer-inner">
+    <div class="logo-row">
+      <div class="logo-item"><img src="assets/vsm-logo.png" alt="Ca' Foscari University of Venice — Venice School of Management"></div>
+      <div class="logo-item"><img src="assets/eu-logo.png" alt="Funded by the European Union"></div>
+    </div>
+
+    <div class="footer-links">
+      <span><span data-it>Progetto OPTItree</span><span data-en>OPTItree project</span> · <a href="https://cordis.europa.eu/project/id/101272250" target="_blank" rel="noopener">cordis.europa.eu</a></span>
+      <span><a href="https://github.com/francescopisanu91/OPTItree" target="_blank" rel="noopener">GitHub</a> · <a href="https://francescopisanu91.github.io/" target="_blank" rel="noopener"><span data-it>sito personale</span><span data-en>personal site</span></a></span>
+    </div>
+
+    <p class="eu-statement">
+      This project has received funding from the European Union's Horizon Europe research and innovation programme under the Marie Skłodowska-Curie grant agreement No. 101272250.
+    </p>
+  </div>
+</footer>
+
+<script>
+  const select = document.getElementById('langSelect');
+  const root = document.documentElement;
+  function applyLang(lang){
+    root.setAttribute('lang', lang);
+    try{ localStorage.setItem('site-lang', lang); }catch(e){}
+  }
+  select.addEventListener('change', (e) => applyLang(e.target.value));
+  (function initLang(){
+    let stored = null;
+    try{ stored = localStorage.getItem('site-lang'); }catch(e){}
+    const browserLang = (navigator.language || 'it').toLowerCase().startsWith('en') ? 'en' : 'it';
+    const initial = stored || browserLang;
+    select.value = initial;
+    applyLang(initial);
+  })();
+</script>
+
+</body>
+</html>

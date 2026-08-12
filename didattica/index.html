@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La matematica dell'evoluzione — attività didattica OPTItree</title>
+<meta name="description" content="La matematica dell'evoluzione: una giornata di laboratori per bambini, attività didattica del progetto di ricerca OPTItree (Horizon Europe, Ca' Foscari Venezia).">
+
+<style>
+:root{
+  --ink:#141a24;
+  --deep:#1b2436;
+  --paper:#f3f0e7;
+  --paper-warm:#eae5d6;
+  --mint:#3fb28f;
+  --mint-bright:#5fd6b0;
+  --gold:#c9a24b;
+  --line:rgba(20,26,36,0.14);
+  --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --sans: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+  --maxw: 1180px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+}
+
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+a{ color:inherit; }
+img{ max-width:100%; display:block; }
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  background:rgba(243,240,231,0.92); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.topbar-inner{
+  max-width:var(--maxw); margin:0 auto; padding:14px 24px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+.crumb{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--mono); font-size:12.5px; letter-spacing:0.02em;
+  text-decoration:none; color:var(--ink); opacity:0.7;
+}
+.crumb:hover{ opacity:1; }
+.crumb .sep{ opacity:0.4; }
+.crumb .current{ color:var(--mint); }
+.topnav{ display:flex; align-items:center; gap:22px; }
+.topnav a{
+  font-family:var(--sans); font-size:14px; font-weight:600;
+  text-decoration:none; color:var(--ink); opacity:0.72; transition:opacity 0.15s ease;
+}
+.topnav a:hover{ opacity:1; }
+.lang-switch{ position:relative; font-family:var(--mono); font-size:12.5px; }
+.lang-switch select{
+  appearance:none; -webkit-appearance:none;
+  background:var(--ink); color:var(--paper); border:1px solid var(--ink);
+  border-radius:5px; padding:7px 30px 7px 12px;
+  font-family:var(--mono); font-size:12.5px; font-weight:600; letter-spacing:0.03em; cursor:pointer;
+}
+.lang-switch::after{
+  content:"⌄"; position:absolute; right:11px; top:50%; transform:translateY(-55%);
+  color:var(--paper); pointer-events:none; font-size:13px;
+}
+
+/* ---------- hero ---------- */
+.hero{ position:relative; background:var(--deep); color:var(--paper); overflow:hidden; padding:64px 24px 60px; }
+.hero-inner{
+  max-width:var(--maxw); margin:0 auto;
+  display:grid; grid-template-columns:1.05fr 0.95fr; gap:48px; align-items:center;
+  position:relative; z-index:2;
+}
+.eyebrow{
+  font-family:var(--mono); font-size:12.5px; letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--mint-bright); display:flex; align-items:center; gap:10px; margin-bottom:22px;
+}
+.eyebrow::before{ content:""; width:26px; height:1px; background:var(--mint-bright); }
+.hero h1{
+  font-family:var(--serif); font-weight:600; font-size:clamp(32px, 4.2vw, 52px);
+  line-height:1.08; margin:0 0 20px; letter-spacing:-0.01em;
+}
+.hero h1 em{ font-style:italic; color:var(--mint-bright); }
+.hero p.lede{ font-size:16.5px; line-height:1.65; color:rgba(243,240,231,0.82); max-width:48ch; margin:0 0 28px; }
+.hero-ctas{ display:flex; gap:14px; flex-wrap:wrap; }
+.btn{
+  font-family:var(--sans); font-weight:700; font-size:14.5px;
+  padding:13px 22px; border-radius:6px; text-decoration:none;
+  display:inline-flex; align-items:center; gap:8px;
+  transition:transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-primary{ background:var(--mint-bright); color:var(--deep); }
+.btn-primary:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(95,214,176,0.25); }
+
+.tree-wrap{ position:relative; }
+.tree-svg{ width:100%; height:auto; }
+.tree-svg .branch{
+  fill:none; stroke:rgba(243,240,231,0.4); stroke-width:1.6;
+  stroke-dasharray:400; stroke-dashoffset:400; animation:draw 1.8s ease forwards;
+}
+.tree-svg .branch.mint{ stroke:var(--mint-bright); stroke-width:2; }
+.tree-svg .leaf{ fill:var(--paper); opacity:0; transform-origin:center; animation:pop 0.5s ease forwards; }
+.tree-svg .leaf.mint-fill{ fill:var(--mint-bright); }
+.tree-svg .leaf.gold-fill{ fill:var(--gold); }
+@keyframes draw{ to{ stroke-dashoffset:0; } }
+@keyframes pop{ from{ opacity:0; transform:scale(0);} to{ opacity:1; transform:scale(1);} }
+
+.hero-bg-grid{
+  position:absolute; inset:0; z-index:1; opacity:0.5;
+  background-image:
+    linear-gradient(rgba(243,240,231,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(243,240,231,0.045) 1px, transparent 1px);
+  background-size:42px 42px;
+}
+
+/* ---------- section shells ---------- */
+section{ padding:64px 24px; }
+.section-inner{ max-width:var(--maxw); margin:0 auto; }
+.section-head{ max-width:640px; margin-bottom:40px; }
+.section-tag{
+  font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--mint); margin-bottom:12px; display:block;
+}
+.section-head h2{ font-family:var(--serif); font-size:clamp(24px,2.8vw,32px); font-weight:600; margin:0 0 12px; letter-spacing:-0.01em; }
+.section-head p{ font-size:15px; color:rgba(20,26,36,0.68); margin:0; }
+
+/* ---------- activities grid ---------- */
+.cards-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:18px; }
+.card{
+  border:1px solid var(--line); border-radius:10px; background:var(--paper);
+  padding:24px 22px; text-decoration:none; color:var(--ink);
+  display:flex; flex-direction:column; gap:14px;
+  transition:transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.card:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(20,26,36,0.08); border-color:rgba(63,178,143,0.4); }
+.card .card-top{ display:flex; align-items:center; justify-content:space-between; }
+.card .letter{ font-family:var(--serif); font-size:30px; font-weight:600; color:var(--mint); line-height:1; }
+.card .kind{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase;
+  color:rgba(20,26,36,0.45); border:1px solid var(--line); border-radius:20px; padding:3px 9px;
+}
+.card h3{ font-family:var(--sans); font-size:16.5px; font-weight:700; margin:0; line-height:1.35; }
+.card p{ font-size:13.5px; color:rgba(20,26,36,0.62); margin:0; line-height:1.55; }
+.card .path{
+  margin-top:auto; font-family:var(--mono); font-size:11.5px; color:rgba(20,26,36,0.4);
+  padding-top:12px; border-top:1px dashed var(--line);
+}
+.card.core{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.card.core .letter{ color:var(--gold); }
+.card.core .kind{ color:rgba(243,240,231,0.55); border-color:rgba(243,240,231,0.25); }
+.card.core h3{ color:var(--paper); }
+.card.core p{ color:rgba(243,240,231,0.68); }
+.card.core .path{ color:rgba(243,240,231,0.4); border-top-color:rgba(243,240,231,0.2); }
+.card.core:hover{ box-shadow:0 14px 30px rgba(20,26,36,0.35); border-color:var(--gold); }
+
+/* ---------- concepts (half-page block) ---------- */
+.concepts{ background:var(--paper-warm); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.concept-list{ display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.concept-item{ background:var(--paper); padding:20px 16px; min-height:140px; display:flex; flex-direction:column; gap:10px; }
+.concept-item .num{ font-family:var(--mono); font-size:12px; color:var(--mint); }
+.concept-item .txt{ font-size:12.5px; line-height:1.55; color:rgba(20,26,36,0.7); }
+
+footer{ background:var(--paper-warm); border-top:1px solid var(--line); padding:32px 24px; text-align:center; }
+footer a{ font-family:var(--mono); font-size:12.5px; color:rgba(20,26,36,0.55); text-decoration:underline; text-decoration-color:rgba(20,26,36,0.25); }
+
+html[lang="en"] [data-it]{ display:none !important; }
+html[lang="it"] [data-en]{ display:none !important; }
+
+@media (max-width: 980px){
+  .hero-inner{ grid-template-columns:1fr; }
+  .tree-wrap{ order:-1; max-width:420px; margin:0 auto; }
+  .cards-grid{ grid-template-columns:repeat(2,1fr); }
+  .concept-list{ grid-template-columns:repeat(2,1fr); }
+  .topnav{ display:none; }
+}
+@media (max-width: 560px){
+  .cards-grid{ grid-template-columns:1fr; }
+  .concept-list{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="../index.html" class="crumb">
+      OPTItree <span class="sep">/</span> <span class="current" data-it>didattica</span><span class="current" data-en>outreach</span>
+    </a>
+    <nav class="topnav">
+      <a href="../index.html"><span data-it>Home</span><span data-en>Home</span></a>
+      <a href="../modelli/index.html"><span data-it>Modelli</span><span data-en>Models</span></a>
+      <a href="../pubblicazioni/index.html"><span data-it>Pubblicazioni</span><span data-en>Publications</span></a>
+      <a href="#attivita"><span data-it>Attività</span><span data-en>Activities</span></a>
+    </nav>
+    <div class="lang-switch">
+      <select id="langSelect" aria-label="Language / Lingua">
+        <option value="it">IT — Italiano</option>
+        <option value="en">EN — English</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-bg-grid" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <div>
+      <span class="eyebrow">
+        <span data-it>Attività didattica del progetto OPTItree</span>
+        <span data-en>Outreach activity of the OPTItree project</span>
+      </span>
+      <h1>
+        <span data-it>La matematica <em>dell'evoluzione</em></span>
+        <span data-en>The mathematics <em>of evolution</em></span>
+      </h1>
+      <p class="lede">
+        <span data-it>Una giornata di laboratori per bambini e ragazzi, pensata per raccontare — con giochi e analogie, senza formule — i problemi di ottimizzazione combinatoria al centro della filogenetica computazionale.</span>
+        <span data-en>A day of hands-on workshops for children, designed to convey — through games and analogies, without formulas — the combinatorial optimisation problems at the heart of computational phylogenetics.</span>
+      </p>
+      <div class="hero-ctas">
+        <a href="#attivita" class="btn btn-primary"><span data-it>Vai alle attività</span><span data-en>Go to the activities</span></a>
+      </div>
+    </div>
+
+    <div class="tree-wrap">
+      <svg class="tree-svg" viewBox="0 0 420 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagramma di un albero filogenetico">
+        <path class="branch mint" d="M210,150 L150,150"/>
+        <path class="branch" d="M150,150 L100,100" style="animation-delay:0.15s"/>
+        <path class="branch" d="M150,150 L100,200" style="animation-delay:0.15s"/>
+        <path class="branch" d="M100,100 L55,70" style="animation-delay:0.3s"/>
+        <path class="branch" d="M100,100 L55,120" style="animation-delay:0.3s"/>
+        <path class="branch" d="M100,200 L55,180" style="animation-delay:0.3s"/>
+        <path class="branch" d="M100,200 L55,230" style="animation-delay:0.3s"/>
+
+        <path class="branch mint" d="M210,150 L270,150" style="animation-delay:0.1s"/>
+        <path class="branch" d="M270,150 L320,100" style="animation-delay:0.25s"/>
+        <path class="branch" d="M270,150 L320,200" style="animation-delay:0.25s"/>
+        <path class="branch" d="M320,100 L365,75" style="animation-delay:0.4s"/>
+        <path class="branch" d="M320,100 L370,110" style="animation-delay:0.4s"/>
+        <path class="branch" d="M320,200 L365,225" style="animation-delay:0.4s"/>
+        <path class="branch" d="M320,200 L360,185" style="animation-delay:0.4s"/>
+
+        <path class="branch" d="M210,150 L210,85" style="animation-delay:0.1s"/>
+        <path class="branch" d="M210,85 L180,45" style="animation-delay:0.25s"/>
+        <path class="branch" d="M210,85 L240,45" style="animation-delay:0.25s"/>
+
+        <circle cx="210" cy="150" r="4.5" class="leaf" fill="var(--paper)" style="animation-delay:0.5s"/>
+
+        <circle cx="55" cy="70" r="5" class="leaf mint-fill" style="animation-delay:0.55s"/>
+        <circle cx="55" cy="120" r="5" class="leaf" style="animation-delay:0.6s"/>
+        <circle cx="55" cy="180" r="5" class="leaf" style="animation-delay:0.65s"/>
+        <circle cx="55" cy="230" r="5" class="leaf gold-fill" style="animation-delay:0.7s"/>
+        <circle cx="365" cy="75" r="5" class="leaf" style="animation-delay:0.6s"/>
+        <circle cx="370" cy="110" r="5" class="leaf mint-fill" style="animation-delay:0.65s"/>
+        <circle cx="365" cy="225" r="5" class="leaf" style="animation-delay:0.7s"/>
+        <circle cx="360" cy="185" r="5" class="leaf" style="animation-delay:0.75s"/>
+        <circle cx="180" cy="45" r="5" class="leaf gold-fill" style="animation-delay:0.55s"/>
+        <circle cx="240" cy="45" r="5" class="leaf" style="animation-delay:0.6s"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- ============ ATTIVITÀ ============ -->
+<section id="attivita">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-tag">01 — <span data-it>Il percorso</span><span data-en>The path</span></span>
+      <h2><span data-it>Tutte le attività, in un unico posto</span><span data-en>All the activities, in one place</span></h2>
+      <p>
+        <span data-it>Ogni tappa è una pagina indipendente: se una si interrompe, le altre restano usabili. Il costruttore di filogenie raccoglie idealmente tutto quello che si impara lungo la giornata.</span>
+        <span data-en>Each stop is an independent page: if one breaks, the others keep working. The phylogeny builder ideally ties together everything learned during the day.</span>
+      </p>
+    </div>
+
+    <div class="cards-grid">
+      <a class="card" href="../didattica/activity_A/index.html">
+        <div class="card-top"><span class="letter">A</span><span class="kind" data-it>datazione</span><span class="kind" data-en>dating</span></div>
+        <h3><span data-it>La datazione</span><span data-en>Dating fossils</span></h3>
+        <p><span data-it>Ordina i fossili nel tempo, poi costruisci l'albero dei dinosauri: dalla linea temporale alla filogenia.</span><span data-en>Order fossils in time, then build the dinosaur tree: from timeline to phylogeny.</span></p>
+        <span class="path">didattica/activity_A/</span>
+      </a>
+
+      <a class="card" href="../didattica/activity_B/index.html">
+        <div class="card-top"><span class="letter">B</span><span class="kind" data-it>geografia</span><span class="kind" data-en>geography</span></div>
+        <h3><span data-it>Indizi geografici</span><span data-en>Geographic clues</span></h3>
+        <p><span data-it>La prossimità sulla mappa può tradire la parentela evolutiva: un altro modo per stimare un albero.</span><span data-en>Geographic proximity can reveal evolutionary kinship: another way to estimate a tree.</span></p>
+        <span class="path">didattica/activity_B/</span>
+      </a>
+
+      <a class="card" href="../didattica/activity_C/index.html">
+        <div class="card-top"><span class="letter">C</span><span class="kind" data-it>morfologia</span><span class="kind" data-en>morphology</span></div>
+        <h3><span data-it>Caratteristiche morfologiche</span><span data-en>Morphological traits</span></h3>
+        <p><span data-it>Quando datazione e geografia non bastano: confrontare forme e caratteri condivisi.</span><span data-en>When dating and geography aren't enough: comparing shared shapes and traits.</span></p>
+        <span class="path">didattica/activity_C/</span>
+      </a>
+
+      <a class="card core" href="../filogenesi.html">
+        <div class="card-top"><span class="letter">∞</span><span class="kind" data-it>costruttore</span><span class="kind" data-en>builder</span></div>
+        <h3><span data-it>Costruttore di filogenie</span><span data-en>Phylogeny builder</span></h3>
+        <p><span data-it>Lo strumento centrale: costruisci e osserva un albero filogenetico, dalle fogne di Venezia al bonobo.</span><span data-en>The central tool: build and explore a phylogenetic tree, from the sewers of Venice to the bonobo.</span></p>
+        <span class="path">/filogenesi.html</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONCETTI (metà pagina, sotto le attività) ============ -->
+<section class="concepts" id="concetti">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-tag">02 — <span data-it>Cosa si impara</span><span data-en>What you learn</span></span>
+      <h2><span data-it>Cinque idee, un solo filo</span><span data-en>Five ideas, one thread</span></h2>
+      <p><span data-it>Ogni attività della giornata aggancia, in forma semplificata, un concetto reale di filogenetica computazionale.</span><span data-en>Each activity of the day is anchored, in simplified form, to a real concept from computational phylogenetics.</span></p>
+    </div>
+
+    <div class="concept-list">
+      <div class="concept-item">
+        <span class="num">01</span>
+        <span class="txt"><span data-it>Perché un albero evolutivo può restare senza radice, senza un punto esterno di riferimento.</span><span data-en>Why an evolutionary tree can stay unrooted, without an external reference point.</span></span>
+      </div>
+      <div class="concept-item">
+        <span class="num">02</span>
+        <span class="txt"><span data-it>Tre modi per stimare le relazioni tra specie: datazione, geografia, morfologia.</span><span data-en>Three ways to estimate relations between species: dating, geography, morphology.</span></span>
+      </div>
+      <div class="concept-item">
+        <span class="num">03</span>
+        <span class="txt"><span data-it>Il caso limite dei virus: nessun fossile, nessuna geografia utile, serve confrontare le sequenze.</span><span data-en>The limit case of viruses: no fossils, no useful geography, sequences must be compared directly.</span></span>
+      </div>
+      <div class="concept-item">
+        <span class="num">04</span>
+        <span class="txt"><span data-it>Come le distanze osservate ricostruiscono una topologia ad albero — il Balanced Minimum Evolution.</span><span data-en>How observed distances reconstruct a tree topology — Balanced Minimum Evolution.</span></span>
+      </div>
+      <div class="concept-item">
+        <span class="num">05</span>
+        <span class="txt"><span data-it>Bonobo o scimpanzé: cosa cambia, sul piano sociale, sapere a chi siamo davvero più vicini.</span><span data-en>Bonobo or chimpanzee: what changes, socially, in knowing who we're really closest to.</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <a href="../index.html">← <span data-it>Torna alla pagina del progetto OPTItree</span><span data-en>Back to the OPTItree project page</span></a>
+</footer>
+
+<script>
+  const select = document.getElementById('langSelect');
+  const root = document.documentElement;
+  function applyLang(lang){
+    root.setAttribute('lang', lang);
+    try{ localStorage.setItem('site-lang', lang); }catch(e){}
+  }
+  select.addEventListener('change', (e) => applyLang(e.target.value));
+  (function initLang(){
+    let stored = null;
+    try{ stored = localStorage.getItem('site-lang'); }catch(e){}
+    const browserLang = (navigator.language || 'it').toLowerCase().startsWith('en') ? 'en' : 'it';
+    const initial = stored || browserLang;
+    select.value = initial;
+    applyLang(initial);
+  })();
+</script>
+
+</body>
+</html>

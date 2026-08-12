@@ -27,7 +27,7 @@
 }
 
 *{ box-sizing:border-box; }
-html{ scroll-behavior:smooth; }
+html{ scroll-behavior:smooth; scrollbar-gutter:stable; }
 body{
   margin:0; background:var(--paper); color:var(--ink);
   font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased;
@@ -42,17 +42,15 @@ img{ max-width:100%; display:block; }
   border-bottom:1px solid var(--line);
 }
 .topbar-inner{
-  max-width:var(--maxw); margin:0 auto; padding:14px 24px;
+  max-width:1080px; margin:0 auto; padding:16px 24px;
   display:flex; align-items:center; justify-content:space-between; gap:16px;
 }
-.crumb{
-  display:flex; align-items:center; gap:8px;
-  font-family:var(--mono); font-size:12.5px; letter-spacing:0.02em;
-  text-decoration:none; color:var(--ink); opacity:0.7;
+.brandmark{
+  display:flex; align-items:center; gap:10px;
+  font-family:var(--serif); font-size:19px; font-weight:600;
+  text-decoration:none; color:var(--ink); letter-spacing:-0.01em;
 }
-.crumb:hover{ opacity:1; }
-.crumb .sep{ opacity:0.4; }
-.crumb .current{ color:var(--mint); }
+.brandmark .dot{ width:8px; height:8px; border-radius:50%; background:var(--mint); flex-shrink:0; }
 .topnav{ display:flex; align-items:center; gap:22px; }
 .topnav a{
   font-family:var(--sans); font-size:14px; font-weight:600;
@@ -192,9 +190,7 @@ html[lang="it"] [data-en]{ display:none !important; }
 <!-- ============ TOP BAR ============ -->
 <div class="topbar">
   <div class="topbar-inner">
-    <a href="../index.html" class="crumb">
-      OPTItree <span class="sep">/</span> <span class="current" data-it>didattica</span><span class="current" data-en>outreach</span>
-    </a>
+    <a href="../index.html" class="brandmark"><span class="dot"></span>OPTItree</a>
     <nav class="topnav">
       <a href="../index.html"><span data-it>Home</span><span data-en>Home</span></a>
       <a href="../modelli/index.html"><span data-it>Modelli</span><span data-en>Models</span></a>
